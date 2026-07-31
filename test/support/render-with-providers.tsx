@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, type RenderOptions } from "@testing-library/react";
+import { cleanup, render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 
@@ -35,8 +35,17 @@ export function createTestQueryClient(): QueryClient {
   });
 }
 
-/** Resets the zustand auth store between tests — it's a module singleton, not provider-scoped. */
+/**
+ * Resets the zustand auth store between tests — it's a module singleton, not provider-scoped.
+ *
+ * Unmounts first: when this runs from an `afterEach` declared inside a `describe` block, Jest
+ * fires it before React Testing Library's own auto-cleanup `afterEach` (registered at the root
+ * level when `@testing-library/react` is imported — inner hooks run before outer ones). Without
+ * an explicit `cleanup()` here, the store update can hit a component that's technically still
+ * mounted, updating it outside of `act(...)`.
+ */
 export function resetAuthStore(): void {
+  cleanup();
   useAuthStore.setState({ user: null });
   localStorage.removeItem("ictchamber.auth.user");
 }
