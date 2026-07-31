@@ -19,15 +19,19 @@ describe("column hooks", () => {
     const queryClient = createTestQueryClient();
     const wrapper = createProvidersWrapper(repositories, queryClient);
 
-    const list = renderHook(() => useColumnsQuery(board.boardId), { wrapper });
-    await waitFor(() => expect(list.result.current.isSuccess).toBe(true));
+    const { result } = renderHook(
+      () => ({
+        list: useColumnsQuery(board.boardId),
+        create: useCreateColumnMutation(board.boardId),
+      }),
+      { wrapper },
+    );
 
-    const create = renderHook(() => useCreateColumnMutation(board.boardId), { wrapper });
-    act(() => create.result.current.mutate({ title: "To Do" }));
-
-    await waitFor(() => expect(create.result.current.isSuccess).toBe(true));
-    await waitFor(() => expect(list.result.current.data).toHaveLength(1));
-    expect(list.result.current.data?.[0]).toMatchObject({ title: "To Do" });
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    act(() => result.current.create.mutate({ title: "To Do" }));
+    await waitFor(() => expect(result.current.create.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    expect(result.current.list.data?.[0]).toMatchObject({ title: "To Do" });
   });
 
   it("renames a column", async () => {

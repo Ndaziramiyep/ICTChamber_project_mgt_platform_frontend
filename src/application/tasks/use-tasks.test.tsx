@@ -19,18 +19,21 @@ describe("task hooks", () => {
     const column = await repositories.columnRepository.createColumn(board.boardId, {
       title: "To Do",
     });
-    const queryClient = createTestQueryClient();
-    const wrapper = createProvidersWrapper(repositories, queryClient);
+    const wrapper = createProvidersWrapper(repositories);
 
-    const list = renderHook(() => useTasksQuery(column.columnId), { wrapper });
-    await waitFor(() => expect(list.result.current.isSuccess).toBe(true));
+    const { result } = renderHook(
+      () => ({
+        list: useTasksQuery(column.columnId),
+        create: useCreateTaskMutation(column.columnId),
+      }),
+      { wrapper },
+    );
 
-    const create = renderHook(() => useCreateTaskMutation(column.columnId), { wrapper });
-    act(() => create.result.current.mutate({ title: "Wire up login form" }));
-
-    await waitFor(() => expect(create.result.current.isSuccess).toBe(true));
-    await waitFor(() => expect(list.result.current.data).toHaveLength(1));
-    expect(list.result.current.data?.[0]).toMatchObject({ title: "Wire up login form" });
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    act(() => result.current.create.mutate({ title: "Wire up login form" }));
+    await waitFor(() => expect(result.current.create.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    expect(result.current.list.data?.[0]).toMatchObject({ title: "Wire up login form" });
   });
 
   it("edits a task's title and description", async () => {
