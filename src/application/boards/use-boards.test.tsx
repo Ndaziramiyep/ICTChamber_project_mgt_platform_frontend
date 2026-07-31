@@ -1,7 +1,3 @@
-import {
-  createFakeRepositories,
-  createProvidersWrapper,
-} from "@test/support/render-with-providers";
 import { renderHook, waitFor, act } from "@testing-library/react";
 
 import {
@@ -10,24 +6,30 @@ import {
   useDeleteBoardMutation,
   useUpdateBoardMutation,
 } from "@/application/boards/use-boards";
+import {
+  createFakeRepositories,
+  createProvidersWrapper,
+} from "@test/support/render-with-providers";
 
 describe("board hooks", () => {
   it("lists boards and reflects a newly created board after invalidation", async () => {
     const repositories = createFakeRepositories();
     const wrapper = createProvidersWrapper(repositories);
 
-    const list = renderHook(() => useBoardsQuery(), { wrapper });
-    await waitFor(() => expect(list.result.current.isSuccess).toBe(true));
-    expect(list.result.current.data).toEqual([]);
-
-    const create = renderHook(() => useCreateBoardMutation(), { wrapper });
-    act(() =>
-      create.result.current.mutate({ title: "Sprint 12", description: "Backend sprint board" }),
+    const { result } = renderHook(
+      () => ({ list: useBoardsQuery(), create: useCreateBoardMutation() }),
+      { wrapper },
     );
-    await waitFor(() => expect(create.result.current.isSuccess).toBe(true));
 
-    await waitFor(() => expect(list.result.current.data).toHaveLength(1));
-    expect(list.result.current.data?.[0]).toMatchObject({ title: "Sprint 12" });
+    await waitFor(() => expect(result.current.list.isSuccess).toBe(true));
+    expect(result.current.list.data).toEqual([]);
+
+    act(() =>
+      result.current.create.mutate({ title: "Sprint 12", description: "Backend sprint board" }),
+    );
+    await waitFor(() => expect(result.current.create.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    expect(result.current.list.data?.[0]).toMatchObject({ title: "Sprint 12" });
   });
 
   it("updates a board and reflects the new title", async () => {

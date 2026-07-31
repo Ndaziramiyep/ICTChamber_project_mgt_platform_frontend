@@ -1,13 +1,13 @@
+import { renderHook, act } from "@testing-library/react";
+
+import { useAuthStore } from "@/application/auth/auth-store";
+import { useLogoutAction } from "@/application/auth/use-logout-action";
 import { buildFakeUser } from "@test/support/fake-repositories";
 import {
   createFakeRepositories,
   createProvidersWrapper,
   resetAuthStore,
 } from "@test/support/render-with-providers";
-import { renderHook, act } from "@testing-library/react";
-
-import { useAuthStore } from "@/application/auth/auth-store";
-import { useLogoutAction } from "@/application/auth/use-logout-action";
 
 describe("useLogoutAction", () => {
   afterEach(resetAuthStore);

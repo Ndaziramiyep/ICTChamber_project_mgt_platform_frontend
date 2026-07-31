@@ -1,12 +1,12 @@
+import { renderHook, waitFor, act } from "@testing-library/react";
+
+import { useAuthStore } from "@/application/auth/auth-store";
+import { useRegisterMutation } from "@/application/auth/use-register-mutation";
 import {
   createFakeRepositories,
   createProvidersWrapper,
   resetAuthStore,
 } from "@test/support/render-with-providers";
-import { renderHook, waitFor, act } from "@testing-library/react";
-
-import { useAuthStore } from "@/application/auth/auth-store";
-import { useRegisterMutation } from "@/application/auth/use-register-mutation";
 
 describe("useRegisterMutation", () => {
   afterEach(resetAuthStore);

@@ -1,9 +1,8 @@
-import { registerMockServerLifecycleHooks } from "@test/mocks/server";
-import { createAuthenticatedHttpClient } from "@test/support/authenticated-client";
-
 import { HttpBoardRepository } from "@/infrastructure/repositories/http-board-repository";
 import { HttpColumnRepository } from "@/infrastructure/repositories/http-column-repository";
 import { HttpTaskRepository } from "@/infrastructure/repositories/http-task-repository";
+import { registerMockServerLifecycleHooks } from "@test/mocks/server";
+import { createAuthenticatedHttpClient } from "@test/support/authenticated-client";
 
 registerMockServerLifecycleHooks();
 

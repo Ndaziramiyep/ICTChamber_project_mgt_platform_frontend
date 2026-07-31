@@ -1,8 +1,3 @@
-import {
-  createFakeRepositories,
-  createProvidersWrapper,
-  createTestQueryClient,
-} from "@test/support/render-with-providers";
 import { renderHook, waitFor, act } from "@testing-library/react";
 
 import {
@@ -11,6 +6,10 @@ import {
   useTasksQuery,
   useUpdateTaskMutation,
 } from "@/application/tasks/use-tasks";
+import {
+  createFakeRepositories,
+  createProvidersWrapper,
+} from "@test/support/render-with-providers";
 
 describe("task hooks", () => {
   it("creates a task and reflects it in the column's task list", async () => {

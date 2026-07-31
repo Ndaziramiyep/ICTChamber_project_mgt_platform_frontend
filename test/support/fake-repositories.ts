@@ -194,6 +194,8 @@ export class FakeTaskRepository implements TaskRepository {
   tasks: Task[] = [];
   private nextId = 1;
 
+  constructor(private readonly columnRepository: FakeColumnRepository) {}
+
   async listTasksByColumn(columnId: string): Promise<Task[]> {
     return this.tasks
       .filter((task) => task.parentColumnId === columnId)
@@ -212,11 +214,12 @@ export class FakeTaskRepository implements TaskRepository {
   }
 
   async createTask(columnId: string, draft: TaskDraft): Promise<Task> {
+    const parentColumn = await this.columnRepository.getColumnById(columnId);
     const now = "2026-01-01T00:00:00Z";
     const task: Task = {
       taskId: `task-${this.nextId++}`,
       parentColumnId: columnId,
-      parentBoardId: "board-1",
+      parentBoardId: parentColumn.parentBoardId,
       title: draft.title,
       description: draft.description ?? null,
       positionValue:

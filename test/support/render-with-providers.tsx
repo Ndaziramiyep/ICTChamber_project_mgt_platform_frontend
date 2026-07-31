@@ -15,11 +15,12 @@ import {
 } from "./fake-repositories";
 
 export function createFakeRepositories(overrides: Partial<Repositories> = {}): Repositories {
+  const columnRepository = new FakeColumnRepository();
   return {
     authRepository: new FakeAuthRepository(),
     boardRepository: new FakeBoardRepository(),
-    columnRepository: new FakeColumnRepository(),
-    taskRepository: new FakeTaskRepository(),
+    columnRepository,
+    taskRepository: new FakeTaskRepository(columnRepository),
     tokenStorage: new FakeTokenStorage(),
     ...overrides,
   };
@@ -43,12 +44,13 @@ export function resetAuthStore(): void {
 export function createProvidersWrapper(
   repositories: Repositories = createFakeRepositories(),
   queryClient: QueryClient = createTestQueryClient(),
+  initialEntries: string[] = ["/"],
 ) {
   return function ProvidersWrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
         <RepositoryProvider repositories={repositories}>
-          <MemoryRouter>{children}</MemoryRouter>
+          <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
         </RepositoryProvider>
       </QueryClientProvider>
     );
@@ -57,18 +59,20 @@ export function createProvidersWrapper(
 
 export function renderWithProviders(
   ui: ReactElement,
-  options: { repositories?: Repositories; queryClient?: QueryClient } & Omit<
-    RenderOptions,
-    "wrapper"
-  > = {},
+  options: {
+    repositories?: Repositories;
+    queryClient?: QueryClient;
+    initialEntries?: string[];
+  } & Omit<RenderOptions, "wrapper"> = {},
 ) {
   const {
     repositories = createFakeRepositories(),
     queryClient = createTestQueryClient(),
+    initialEntries = ["/"],
     ...renderOptions
   } = options;
   return render(ui, {
-    wrapper: createProvidersWrapper(repositories, queryClient),
+    wrapper: createProvidersWrapper(repositories, queryClient, initialEntries),
     ...renderOptions,
   });
 }

@@ -12,9 +12,9 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "jest --maxWorkers=50%",
+    "test:watch": "jest --watch --maxWorkers=50%",
+    "test:coverage": "jest --coverage --maxWorkers=50%",
     "prepare": "husky"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "@tanstack/react-query": "^5.101.4",
     "axios": "^1.19.0",
     "clsx": "^2.1.1",
+    "lucide-react": "^1.28.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.83.0",

@@ -1,6 +1,5 @@
-import { buildFakeUser } from "@test/support/fake-repositories";
-
 import { useAuthStore } from "@/application/auth/auth-store";
+import { buildFakeUser } from "@test/support/fake-repositories";
 
 describe("useAuthStore", () => {
   afterEach(() => {

@@ -10,6 +10,10 @@ import { useRepositories } from "@/application/repository-provider";
  * `GET /auth/me` and populates the auth store, so a reload doesn't force a fresh login. If the
  * tokens turn out to be dead, the api-client's interceptor has already cleared them by the time
  * this query settles into an error.
+ *
+ * The store is updated from inside `queryFn` itself, not a `useEffect` on `query.data` — an
+ * effect fires a render after `isPending` already flips to `false`, so a guard component
+ * reading the store on that same render would see a stale `null` user and redirect incorrectly.
  */
 export function useSessionBootstrap(): { isBootstrapping: boolean } {
   const { authRepository, tokenStorage } = useRepositories();
@@ -18,17 +22,15 @@ export function useSessionBootstrap(): { isBootstrapping: boolean } {
 
   const query = useQuery({
     queryKey: queryKeys.session.currentUser,
-    queryFn: () => authRepository.getCurrentUser(),
+    queryFn: async () => {
+      const user = await authRepository.getCurrentUser();
+      setUser(user);
+      return user;
+    },
     enabled: hasStoredTokens,
     retry: false,
     staleTime: Infinity,
   });
-
-  useEffect(() => {
-    if (query.data) {
-      setUser(query.data);
-    }
-  }, [query.data, setUser]);
 
   useEffect(() => {
     if (query.isError) {

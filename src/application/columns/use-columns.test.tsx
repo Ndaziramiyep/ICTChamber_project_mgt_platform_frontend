@@ -1,8 +1,3 @@
-import {
-  createFakeRepositories,
-  createProvidersWrapper,
-  createTestQueryClient,
-} from "@test/support/render-with-providers";
 import { renderHook, waitFor, act } from "@testing-library/react";
 
 import {
@@ -11,6 +6,11 @@ import {
   useDeleteColumnMutation,
   useUpdateColumnMutation,
 } from "@/application/columns/use-columns";
+import {
+  createFakeRepositories,
+  createProvidersWrapper,
+  createTestQueryClient,
+} from "@test/support/render-with-providers";
 
 describe("column hooks", () => {
   it("creates a column and reflects it in the board's column list", async () => {

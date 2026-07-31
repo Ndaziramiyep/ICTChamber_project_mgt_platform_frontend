@@ -1,8 +1,7 @@
-import { registerMockServerLifecycleHooks } from "@test/mocks/server";
-
 import { ApiError } from "@/domain/errors/api-error";
 import { createApiClient } from "@/infrastructure/http/api-client";
 import { LocalStorageTokenStorage } from "@/infrastructure/storage/token-storage";
+import { registerMockServerLifecycleHooks } from "@test/mocks/server";
 
 registerMockServerLifecycleHooks();
 

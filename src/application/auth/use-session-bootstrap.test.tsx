@@ -1,12 +1,12 @@
+import { renderHook, waitFor } from "@testing-library/react";
+
+import { useAuthStore } from "@/application/auth/auth-store";
+import { useSessionBootstrap } from "@/application/auth/use-session-bootstrap";
 import {
   createFakeRepositories,
   createProvidersWrapper,
   resetAuthStore,
 } from "@test/support/render-with-providers";
-import { renderHook, waitFor } from "@testing-library/react";
-
-import { useAuthStore } from "@/application/auth/auth-store";
-import { useSessionBootstrap } from "@/application/auth/use-session-bootstrap";
 
 describe("useSessionBootstrap", () => {
   afterEach(resetAuthStore);
