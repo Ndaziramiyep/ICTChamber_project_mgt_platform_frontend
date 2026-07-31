@@ -30,14 +30,17 @@ module.exports = {
     "!src/vite-env.d.ts",
     "!src/**/*.d.ts",
     "!src/**/index.ts",
+    // Wraps import.meta.env (Vite-only syntax) — swapped out via moduleNameMapper in every
+    // test, so it is never exercised under Jest by design. See test/mocks/env.ts.
+    "!src/shared/config/env.ts",
   ],
   coverageDirectory: "<rootDir>/coverage",
   coverageThreshold: {
     global: {
-      statements: 75,
-      branches: 65,
-      functions: 70,
-      lines: 75,
+      statements: 90,
+      branches: 80,
+      functions: 85,
+      lines: 90,
     },
   },
   clearMocks: true,

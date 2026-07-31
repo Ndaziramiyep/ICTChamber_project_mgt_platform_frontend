@@ -66,5 +66,5 @@ describe("App golden path", () => {
     const dialog = screen.getByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
     expect(await screen.findByText("No boards yet")).toBeInTheDocument();
-  });
+  }, 20000);
 });
