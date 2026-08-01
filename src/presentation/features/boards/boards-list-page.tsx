@@ -6,7 +6,8 @@ import type { Board } from "@/domain/entities/board";
 import { Button } from "@/presentation/components/button";
 import { ConfirmDialog } from "@/presentation/components/confirm-dialog";
 import { EmptyState } from "@/presentation/components/empty-state";
-import { ErrorState, LoadingState } from "@/presentation/components/page-status";
+import { ErrorState } from "@/presentation/components/page-status";
+import { BoardCardsSkeleton } from "@/presentation/components/skeleton";
 import { BoardCard } from "@/presentation/features/boards/board-card";
 import { BoardFormModal } from "@/presentation/features/boards/board-form-modal";
 import { getErrorMessage } from "@/shared/lib/get-error-message";
@@ -34,14 +35,14 @@ export function BoardsListPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Your boards</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Your boards</h1>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4" aria-hidden="true" />
           New board
         </Button>
       </div>
 
-      {boardsQuery.isPending ? <LoadingState label="Loading boards…" /> : null}
+      {boardsQuery.isPending ? <BoardCardsSkeleton /> : null}
 
       {boardsQuery.isError ? (
         <ErrorState

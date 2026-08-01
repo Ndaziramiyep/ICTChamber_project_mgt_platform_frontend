@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuthStore } from "@/application/auth/auth-store";
 import { createDefaultRepositories, RepositoryProvider } from "@/application/repository-provider";
+import { useApplyTheme } from "@/application/theme/use-apply-theme";
 import { Toaster } from "@/presentation/components/toaster";
 import { LoginPage } from "@/presentation/features/auth/login-page";
 import { RegisterPage } from "@/presentation/features/auth/register-page";
@@ -22,6 +23,7 @@ export default function App() {
   const [repositories] = useState(() =>
     createDefaultRepositories(() => useAuthStore.getState().setUser(null)),
   );
+  useApplyTheme();
 
   return (
     <QueryClientProvider client={queryClient}>

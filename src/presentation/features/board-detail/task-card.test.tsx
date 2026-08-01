@@ -17,7 +17,15 @@ const task: Task = {
 
 describe("TaskCard", () => {
   it("renders the title and description", () => {
-    render(<TaskCard task={task} onEdit={jest.fn()} onDelete={jest.fn()} />);
+    render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
 
     expect(screen.getByText("Wire up login form")).toBeInTheDocument();
     expect(screen.getByText("Use the /auth/login endpoint")).toBeInTheDocument();
@@ -25,20 +33,52 @@ describe("TaskCard", () => {
 
   it("omits the description paragraph when there is none", () => {
     render(
-      <TaskCard task={{ ...task, description: null }} onEdit={jest.fn()} onDelete={jest.fn()} />,
+      <TaskCard
+        task={{ ...task, description: null }}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
     );
     expect(screen.queryByText("Use the /auth/login endpoint")).not.toBeInTheDocument();
   });
 
-  it("calls onEdit and onDelete", async () => {
+  it("calls onEdit, onDuplicate, and onDelete", async () => {
     const onEdit = jest.fn();
+    const onDuplicate = jest.fn();
     const onDelete = jest.fn();
-    render(<TaskCard task={task} onEdit={onEdit} onDelete={onDelete} />);
+    render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={onEdit}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
+      />,
+    );
 
     await userEvent.click(screen.getByRole("button", { name: "Edit Wire up login form" }));
+    await userEvent.click(screen.getByRole("button", { name: "Duplicate Wire up login form" }));
     await userEvent.click(screen.getByRole("button", { name: "Delete Wire up login form" }));
 
     expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(onDuplicate).toHaveBeenCalledTimes(1);
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables the drag handle when isDragDisabled is true", () => {
+    render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+        isDragDisabled
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Drag Wire up login form" })).toBeDisabled();
   });
 });

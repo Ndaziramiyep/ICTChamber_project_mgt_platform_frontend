@@ -1,12 +1,19 @@
-import type { HTMLAttributes } from "react";
+import { forwardRef, type HTMLAttributes } from "react";
 
 import { cx } from "@/shared/lib/class-names";
 
-export function Card({ className, ...divProps }: HTMLAttributes<HTMLDivElement>) {
+export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function Card(
+  { className, ...divProps },
+  ref,
+) {
   return (
     <div
-      className={cx("rounded-lg border border-slate-200 bg-white p-4 shadow-sm", className)}
+      ref={ref}
+      className={cx(
+        "rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900",
+        className,
+      )}
       {...divProps}
     />
   );
-}
+});

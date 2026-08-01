@@ -17,7 +17,7 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
       <div className="flex items-start justify-between gap-2">
         <Link
           to={`/boards/${board.boardId}`}
-          className="text-base font-semibold text-slate-900 hover:text-brand-600"
+          className="text-base font-semibold text-slate-900 hover:text-brand-600 dark:text-slate-100 dark:hover:text-brand-400"
         >
           {board.title}
         </Link>
@@ -26,7 +26,7 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
             type="button"
             aria-label={`Edit ${board.title}`}
             onClick={onEdit}
-            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
           >
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -34,16 +34,20 @@ export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
             type="button"
             aria-label={`Delete ${board.title}`}
             onClick={onDelete}
-            className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </div>
       {board.description ? (
-        <p className="line-clamp-2 text-sm text-slate-500">{board.description}</p>
+        <p className="line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
+          {board.description}
+        </p>
       ) : null}
-      <p className="text-xs text-slate-400">Updated {formatDate(board.updatedAt)}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500">
+        Updated {formatDate(board.updatedAt)}
+      </p>
     </Card>
   );
 }

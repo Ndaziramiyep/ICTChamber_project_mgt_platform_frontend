@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (`.dark` on <html>) instead of the `prefers-color-scheme`-only default,
+   so a manual toggle can override the system preference. See `use-theme.ts`. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-50: #eef2ff;
   --color-brand-100: #e0e7ff;
@@ -20,7 +24,7 @@ body,
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
 }
 
 *:focus-visible {

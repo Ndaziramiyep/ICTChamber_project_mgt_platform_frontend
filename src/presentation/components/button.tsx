@@ -12,9 +12,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-brand-600 text-white hover:bg-brand-700 focus-visible:outline-brand-600",
-  secondary: "bg-white text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50",
+  secondary:
+    "bg-white text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 " +
+    "dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600 dark:hover:bg-slate-700",
   danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600",
-  ghost: "bg-transparent text-slate-700 hover:bg-slate-100",
+  ghost:
+    "bg-transparent text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

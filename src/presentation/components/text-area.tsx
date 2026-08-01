@@ -20,6 +20,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
         "placeholder:text-slate-400 focus:outline focus:outline-2 focus:-outline-offset-1",
         hasError ? "ring-red-400 focus:outline-red-500" : "ring-slate-300 focus:outline-brand-600",
         "disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500",
+        "dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600 dark:placeholder:text-slate-500 dark:disabled:bg-slate-900",
         className,
       )}
       {...textAreaProps}
