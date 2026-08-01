@@ -10,6 +10,7 @@ import { Button } from "@/presentation/components/button";
 import { FormField } from "@/presentation/components/form-field";
 import { Input } from "@/presentation/components/input";
 import { Modal } from "@/presentation/components/modal";
+import { applyServerValidationErrors } from "@/shared/lib/apply-server-validation-errors";
 import { getErrorMessage } from "@/shared/lib/get-error-message";
 import { notify } from "@/shared/lib/notify";
 import { columnFormSchema, type ColumnFormValues } from "@/shared/validation/board-schemas";
@@ -52,6 +53,7 @@ function ColumnForm({
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<ColumnFormValues>({
     resolver: zodResolver(columnFormSchema),
@@ -69,7 +71,12 @@ function ColumnForm({
       }
       onDone();
     } catch (error) {
-      notify.error(getErrorMessage(error));
+      const handledInline = applyServerValidationErrors(error, setError, {
+        column_title: "title",
+      });
+      if (!handledInline) {
+        notify.error(getErrorMessage(error));
+      }
     }
   });
 

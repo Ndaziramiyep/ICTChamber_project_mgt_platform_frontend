@@ -8,6 +8,7 @@ import { FormField } from "@/presentation/components/form-field";
 import { Input } from "@/presentation/components/input";
 import { Modal } from "@/presentation/components/modal";
 import { TextArea } from "@/presentation/components/text-area";
+import { applyServerValidationErrors } from "@/shared/lib/apply-server-validation-errors";
 import { getErrorMessage } from "@/shared/lib/get-error-message";
 import { notify } from "@/shared/lib/notify";
 import { taskFormSchema, type TaskFormValues } from "@/shared/validation/board-schemas";
@@ -46,6 +47,7 @@ function TaskForm({
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -69,7 +71,13 @@ function TaskForm({
       }
       onDone();
     } catch (error) {
-      notify.error(getErrorMessage(error));
+      const handledInline = applyServerValidationErrors(error, setError, {
+        task_title: "title",
+        task_description: "description",
+      });
+      if (!handledInline) {
+        notify.error(getErrorMessage(error));
+      }
     }
   });
 

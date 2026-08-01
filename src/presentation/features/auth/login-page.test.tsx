@@ -2,6 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 
+import { ApiError } from "@/domain/errors/api-error";
 import { Toaster } from "@/presentation/components/toaster";
 import { LoginPage } from "@/presentation/features/auth/login-page";
 import {
@@ -62,5 +63,25 @@ describe("LoginPage", () => {
       expect(screen.getByText("Incorrect email or password.")).toBeInTheDocument(),
     );
     expect(screen.queryByText("Boards page")).not.toBeInTheDocument();
+  });
+
+  it("shows a 422 field-level error next to the relevant input instead of a toast", async () => {
+    const repositories = createFakeRepositories();
+    repositories.authRepository.login = jest.fn().mockRejectedValue(
+      new ApiError({
+        httpStatus: 422,
+        errorCode: "ValidationError",
+        message: "Validation failed.",
+        validationErrors: [{ fieldPath: "email_address", message: "Enter a valid email address." }],
+      }),
+    );
+    renderLoginPage(repositories);
+
+    await userEvent.type(screen.getByLabelText("Email address"), "jane@example.com");
+    await userEvent.type(screen.getByLabelText("Password"), "at-least-8-characters");
+    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("Enter a valid email address.")).toBeInTheDocument();
+    expect(screen.queryByText("Validation failed.")).not.toBeInTheDocument();
   });
 });

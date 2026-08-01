@@ -7,6 +7,7 @@ import { Button } from "@/presentation/components/button";
 import { FormField } from "@/presentation/components/form-field";
 import { Input } from "@/presentation/components/input";
 import { AuthLayout } from "@/presentation/features/auth/auth-layout";
+import { applyServerValidationErrors } from "@/shared/lib/apply-server-validation-errors";
 import { getErrorMessage } from "@/shared/lib/get-error-message";
 import { notify } from "@/shared/lib/notify";
 import { loginFormSchema, type LoginFormValues } from "@/shared/validation/auth-schemas";
@@ -17,6 +18,7 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginFormSchema) });
 
@@ -25,7 +27,13 @@ export function LoginPage() {
       await loginMutation.mutateAsync(values);
       navigate("/boards", { replace: true });
     } catch (error) {
-      notify.error(getErrorMessage(error, "Could not sign in. Please try again."));
+      const handledInline = applyServerValidationErrors(error, setError, {
+        email_address: "emailAddress",
+        plain_text_password: "plainTextPassword",
+      });
+      if (!handledInline) {
+        notify.error(getErrorMessage(error, "Could not sign in. Please try again."));
+      }
     }
   });
 

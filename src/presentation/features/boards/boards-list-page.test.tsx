@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import { ApiError } from "@/domain/errors/api-error";
 import { Toaster } from "@/presentation/components/toaster";
 import { BoardsListPage } from "@/presentation/features/boards/boards-list-page";
 import { createFakeRepositories, renderWithProviders } from "@test/support/render-with-providers";
@@ -75,5 +76,28 @@ describe("BoardsListPage", () => {
       expect(screen.queryByRole("link", { name: "Sprint 12" })).not.toBeInTheDocument(),
     );
     expect(await screen.findByText("No boards yet")).toBeInTheDocument();
+  });
+
+  it("shows a 422 field-level error next to the title input instead of a toast", async () => {
+    const repositories = createFakeRepositories();
+    repositories.boardRepository.createBoard = jest.fn().mockRejectedValue(
+      new ApiError({
+        httpStatus: 422,
+        errorCode: "ValidationError",
+        message: "Validation failed.",
+        validationErrors: [
+          { fieldPath: "board_title", message: "Title must be 200 characters or fewer." },
+        ],
+      }),
+    );
+    renderBoardsListPage(repositories);
+    await screen.findByText("No boards yet");
+
+    await userEvent.click(screen.getByRole("button", { name: "New board" }));
+    await userEvent.type(screen.getByLabelText("Title"), "Sprint 12");
+    await userEvent.click(screen.getByRole("button", { name: "Create board" }));
+
+    expect(await screen.findByText("Title must be 200 characters or fewer.")).toBeInTheDocument();
+    expect(screen.queryByText("Validation failed.")).not.toBeInTheDocument();
   });
 });
