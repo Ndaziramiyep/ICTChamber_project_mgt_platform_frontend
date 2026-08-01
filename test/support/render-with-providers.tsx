@@ -47,7 +47,6 @@ export function createTestQueryClient(): QueryClient {
 export function resetAuthStore(): void {
   cleanup();
   useAuthStore.setState({ user: null });
-  localStorage.removeItem("ictchamber.auth.user");
 }
 
 export function createProvidersWrapper(

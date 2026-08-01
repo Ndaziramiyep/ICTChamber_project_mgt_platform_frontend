@@ -1,15 +1,15 @@
 import { ApiError } from "@/domain/errors/api-error";
 import { createApiClient } from "@/infrastructure/http/api-client";
-import { LocalStorageTokenStorage } from "@/infrastructure/storage/token-storage";
+import { SessionStorageTokenStorage } from "@/infrastructure/storage/token-storage";
 import { registerMockServerLifecycleHooks } from "@test/mocks/server";
 
 registerMockServerLifecycleHooks();
 
 describe("createApiClient", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => sessionStorage.clear());
 
   it("attaches the stored access token to outgoing requests", async () => {
-    const tokenStorage = new LocalStorageTokenStorage();
+    const tokenStorage = new SessionStorageTokenStorage();
     const client = createApiClient({ tokenStorage, onSessionExpired: jest.fn() });
 
     await client.post("/api/v1/auth/register", {
@@ -31,7 +31,7 @@ describe("createApiClient", () => {
   });
 
   it("transparently refreshes an expired access token and retries the original request once", async () => {
-    const tokenStorage = new LocalStorageTokenStorage();
+    const tokenStorage = new SessionStorageTokenStorage();
     const onSessionExpired = jest.fn();
     const client = createApiClient({ tokenStorage, onSessionExpired });
 
@@ -60,7 +60,7 @@ describe("createApiClient", () => {
   });
 
   it("clears tokens and reports session expiry when the refresh token itself is invalid", async () => {
-    const tokenStorage = new LocalStorageTokenStorage();
+    const tokenStorage = new SessionStorageTokenStorage();
     const onSessionExpired = jest.fn();
     const client = createApiClient({ tokenStorage, onSessionExpired });
 
@@ -73,7 +73,7 @@ describe("createApiClient", () => {
   });
 
   it("reports session expiry without attempting a refresh when there are no stored tokens", async () => {
-    const tokenStorage = new LocalStorageTokenStorage();
+    const tokenStorage = new SessionStorageTokenStorage();
     const onSessionExpired = jest.fn();
     const client = createApiClient({ tokenStorage, onSessionExpired });
 
@@ -82,7 +82,7 @@ describe("createApiClient", () => {
   });
 
   it("normalizes a 409 conflict response into an ApiError with the backend's error code and message", async () => {
-    const tokenStorage = new LocalStorageTokenStorage();
+    const tokenStorage = new SessionStorageTokenStorage();
     const client = createApiClient({ tokenStorage, onSessionExpired: jest.fn() });
 
     const registrationPayload = {

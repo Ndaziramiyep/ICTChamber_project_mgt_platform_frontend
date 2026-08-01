@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 import type { User } from "@/domain/entities/user";
 
@@ -9,17 +8,12 @@ interface AuthState {
 }
 
 /**
- * Holds the current user's profile for the UI. Deliberately does NOT hold auth tokens — those
- * are owned by {@link TokenStorage} (infrastructure layer) so there is a single source of truth
- * for session credentials. Persisting just the profile lets the app render "signed in as X"
- * immediately on reload, ahead of the `/auth/me` bootstrap call confirming it.
+ * Holds the current user's profile for the UI, in memory only — nothing is persisted to
+ * `localStorage` or any other client storage. On every app load, {@link useSessionBootstrap}
+ * re-derives this from `GET /auth/me`, so the database is always the source of truth for who's
+ * signed in, never a cached copy sitting in the browser.
  */
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      setUser: (user) => set({ user }),
-    }),
-    { name: "ictchamber.auth.user" },
-  ),
-);
+export const useAuthStore = create<AuthState>()((set) => ({
+  user: null,
+  setUser: (user) => set({ user }),
+}));

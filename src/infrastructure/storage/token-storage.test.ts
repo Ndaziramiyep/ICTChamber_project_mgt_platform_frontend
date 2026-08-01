@@ -1,24 +1,24 @@
-import { LocalStorageTokenStorage } from "@/infrastructure/storage/token-storage";
+import { SessionStorageTokenStorage } from "@/infrastructure/storage/token-storage";
 
-describe("LocalStorageTokenStorage", () => {
+describe("SessionStorageTokenStorage", () => {
   beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
   });
 
   it("returns null when nothing has been stored", () => {
-    const storage = new LocalStorageTokenStorage();
+    const storage = new SessionStorageTokenStorage();
     expect(storage.getTokens()).toBeNull();
   });
 
   it("round-trips a saved token pair", () => {
-    const storage = new LocalStorageTokenStorage();
+    const storage = new SessionStorageTokenStorage();
     storage.saveTokens({ accessToken: "access-1", refreshToken: "refresh-1" });
 
     expect(storage.getTokens()).toEqual({ accessToken: "access-1", refreshToken: "refresh-1" });
   });
 
   it("clears stored tokens", () => {
-    const storage = new LocalStorageTokenStorage();
+    const storage = new SessionStorageTokenStorage();
     storage.saveTokens({ accessToken: "access-1", refreshToken: "refresh-1" });
     storage.clearTokens();
 
@@ -26,16 +26,23 @@ describe("LocalStorageTokenStorage", () => {
   });
 
   it("treats malformed JSON as no stored tokens", () => {
-    localStorage.setItem("ictchamber.auth.tokens", "{not-json");
-    const storage = new LocalStorageTokenStorage();
+    sessionStorage.setItem("ictchamber.auth.tokens", "{not-json");
+    const storage = new SessionStorageTokenStorage();
 
     expect(storage.getTokens()).toBeNull();
   });
 
   it("treats a partial token pair as no stored tokens", () => {
-    localStorage.setItem("ictchamber.auth.tokens", JSON.stringify({ accessToken: "only-one" }));
-    const storage = new LocalStorageTokenStorage();
+    sessionStorage.setItem("ictchamber.auth.tokens", JSON.stringify({ accessToken: "only-one" }));
+    const storage = new SessionStorageTokenStorage();
 
     expect(storage.getTokens()).toBeNull();
+  });
+
+  it("does not write anything to localStorage", () => {
+    const storage = new SessionStorageTokenStorage();
+    storage.saveTokens({ accessToken: "access-1", refreshToken: "refresh-1" });
+
+    expect(localStorage.getItem("ictchamber.auth.tokens")).toBeNull();
   });
 });

@@ -10,7 +10,7 @@ import { HttpBoardRepository } from "@/infrastructure/repositories/http-board-re
 import { HttpColumnRepository } from "@/infrastructure/repositories/http-column-repository";
 import { HttpTaskRepository } from "@/infrastructure/repositories/http-task-repository";
 import {
-  LocalStorageTokenStorage,
+  SessionStorageTokenStorage,
   type TokenStorage,
 } from "@/infrastructure/storage/token-storage";
 
@@ -27,7 +27,7 @@ export interface Repositories {
  * context so it can be constructed once (stable identity) and swapped for fakes in tests.
  */
 export function createDefaultRepositories(onSessionExpired: () => void): Repositories {
-  const tokenStorage = new LocalStorageTokenStorage();
+  const tokenStorage = new SessionStorageTokenStorage();
   const httpClient = createApiClient({ tokenStorage, onSessionExpired });
 
   return {

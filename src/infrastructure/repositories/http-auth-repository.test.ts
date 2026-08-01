@@ -1,20 +1,20 @@
 import { ApiError } from "@/domain/errors/api-error";
 import { createApiClient } from "@/infrastructure/http/api-client";
 import { HttpAuthRepository } from "@/infrastructure/repositories/http-auth-repository";
-import { LocalStorageTokenStorage } from "@/infrastructure/storage/token-storage";
+import { SessionStorageTokenStorage } from "@/infrastructure/storage/token-storage";
 import { registerMockServerLifecycleHooks } from "@test/mocks/server";
 
 registerMockServerLifecycleHooks();
 
 function buildRepository() {
-  const tokenStorage = new LocalStorageTokenStorage();
+  const tokenStorage = new SessionStorageTokenStorage();
   const onSessionExpired = jest.fn();
   const httpClient = createApiClient({ tokenStorage, onSessionExpired });
   return { repository: new HttpAuthRepository(httpClient), tokenStorage, onSessionExpired };
 }
 
 describe("HttpAuthRepository", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => sessionStorage.clear());
 
   it("registers a new user", async () => {
     const { repository } = buildRepository();

@@ -1,7 +1,7 @@
 import type { AxiosInstance } from "axios";
 
 import { createApiClient } from "@/infrastructure/http/api-client";
-import { LocalStorageTokenStorage } from "@/infrastructure/storage/token-storage";
+import { SessionStorageTokenStorage } from "@/infrastructure/storage/token-storage";
 
 let registrationCounter = 0;
 
@@ -12,7 +12,7 @@ let registrationCounter = 0;
 export async function createAuthenticatedHttpClient(): Promise<AxiosInstance> {
   registrationCounter += 1;
   const emailAddress = `user-${registrationCounter}@example.com`;
-  const tokenStorage = new LocalStorageTokenStorage();
+  const tokenStorage = new SessionStorageTokenStorage();
   const httpClient = createApiClient({ tokenStorage, onSessionExpired: jest.fn() });
 
   await httpClient.post("/api/v1/auth/register", {
