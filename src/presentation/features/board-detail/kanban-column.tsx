@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -225,17 +226,26 @@ export function KanbanColumn({
               strategy={verticalListSortingStrategy}
             >
               <div className="flex flex-col gap-2">
-                {displayTasks.map((task) => (
-                  <TaskCard
-                    key={task.taskId}
-                    task={task}
-                    columnId={column.columnId}
-                    isDragDisabled={isDragDisabled}
-                    onEdit={() => setTaskBeingEdited(task)}
-                    onDuplicate={() => void handleDuplicateTask(task)}
-                    onDelete={() => setTaskBeingDeleted(task)}
-                  />
-                ))}
+                <AnimatePresence initial={false}>
+                  {displayTasks.map((task) => (
+                    <motion.div
+                      key={task.taskId}
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <TaskCard
+                        task={task}
+                        columnId={column.columnId}
+                        isDragDisabled={isDragDisabled}
+                        onEdit={() => setTaskBeingEdited(task)}
+                        onDuplicate={() => void handleDuplicateTask(task)}
+                        onDelete={() => setTaskBeingDeleted(task)}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </SortableContext>
           ) : null}
