@@ -68,8 +68,13 @@ export function BoardDetailPage() {
 
         {columnsQuery.isSuccess && columnsQuery.data.length > 0 ? (
           <div className="flex items-start gap-4">
-            {columnsQuery.data.map((column) => (
-              <KanbanColumn key={column.columnId} column={column} boardId={boardId} />
+            {columnsQuery.data.map((column, index) => (
+              <KanbanColumn
+                key={column.columnId}
+                column={column}
+                boardId={boardId}
+                accentIndex={index}
+              />
             ))}
             <Button
               variant="secondary"
