@@ -3,7 +3,6 @@
 A React + TypeScript single-page app for the ICT Chamber Kanban project management platform.
 It provides JWT-based authentication and a Board → Column → Task Kanban workspace with
 drag-and-drop, built against the FastAPI backend described in
-[`Project_Backend_descriptions.md`](./Project_Backend_descriptions.md).
 
 ## Table of contents
 
