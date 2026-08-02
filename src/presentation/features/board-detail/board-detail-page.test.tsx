@@ -4,6 +4,7 @@ import { Route, Routes } from "react-router-dom";
 
 import { Toaster } from "@/presentation/components/toaster";
 import { BoardDetailPage } from "@/presentation/features/board-detail/board-detail-page";
+import { getColumnAccent } from "@/presentation/features/board-detail/column-accent";
 import { createFakeRepositories, renderWithProviders } from "@test/support/render-with-providers";
 
 function renderBoardDetailPage(boardId: string, repositories = createFakeRepositories()) {
@@ -84,5 +85,36 @@ describe("BoardDetailPage", () => {
     const columnDeleteDialog = screen.getByRole("dialog");
     await userEvent.click(within(columnDeleteDialog).getByRole("button", { name: "Delete" }));
     expect(await screen.findByText("No columns yet")).toBeInTheDocument();
+  });
+
+  it("keeps many columns in a single non-wrapping row so they scroll horizontally", async () => {
+    const repositories = createFakeRepositories();
+    const board = await repositories.boardRepository.createBoard({ title: "Sprint 12" });
+    for (let index = 0; index < 6; index += 1) {
+      await repositories.columnRepository.createColumn(board.boardId, {
+        title: `Column ${index}`,
+      });
+    }
+    const { container } = renderBoardDetailPage(board.boardId, repositories);
+
+    await screen.findByRole("heading", { name: "Column 0" });
+    const row = container.querySelector(".flex-nowrap");
+    expect(row).not.toBeNull();
+    expect(row).toHaveClass("flex", "flex-nowrap");
+    expect(row?.children.length).toBe(7); // 6 columns + the "Add column" button
+  });
+
+  it("gives each column a distinct accent color, cycling by position", async () => {
+    const repositories = createFakeRepositories();
+    const board = await repositories.boardRepository.createBoard({ title: "Sprint 12" });
+    await repositories.columnRepository.createColumn(board.boardId, { title: "Backlog" });
+    await repositories.columnRepository.createColumn(board.boardId, { title: "Done" });
+    renderBoardDetailPage(board.boardId, repositories);
+
+    const backlogHeading = await screen.findByRole("heading", { name: "Backlog" });
+    const doneHeading = await screen.findByRole("heading", { name: "Done" });
+
+    expect(backlogHeading).toHaveClass(getColumnAccent(0).headerText);
+    expect(doneHeading).toHaveClass(getColumnAccent(1).headerText);
   });
 });

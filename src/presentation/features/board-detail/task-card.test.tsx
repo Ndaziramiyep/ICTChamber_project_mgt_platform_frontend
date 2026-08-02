@@ -67,8 +67,8 @@ describe("TaskCard", () => {
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it("disables the drag handle when isDragDisabled is true", () => {
-    render(
+  it("marks the card drag-disabled when isDragDisabled is true", () => {
+    const { container } = render(
       <TaskCard
         task={task}
         columnId="column-1"
@@ -79,6 +79,55 @@ describe("TaskCard", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Drag Wire up login form" })).toBeDisabled();
+    expect(container.firstChild).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("toggles the complete checkbox and applies a strikethrough to the title", async () => {
+    render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    const checkbox = screen.getByRole("checkbox", { name: "Mark Wire up login form complete" });
+    expect(checkbox).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText("Wire up login form")).not.toHaveClass("line-through");
+
+    await userEvent.click(checkbox);
+
+    expect(checkbox).toHaveAttribute("aria-checked", "true");
+    expect(
+      screen.getByRole("checkbox", { name: "Mark Wire up login form incomplete" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Wire up login form")).toHaveClass("line-through");
+  });
+
+  it("does not start a drag from the edit, duplicate, delete, or complete buttons", () => {
+    render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("checkbox", { name: "Mark Wire up login form complete" }),
+    ).toHaveAttribute("data-no-dnd");
+    expect(screen.getByRole("button", { name: "Edit Wire up login form" })).toHaveAttribute(
+      "data-no-dnd",
+    );
+    expect(screen.getByRole("button", { name: "Duplicate Wire up login form" })).toHaveAttribute(
+      "data-no-dnd",
+    );
+    expect(screen.getByRole("button", { name: "Delete Wire up login form" })).toHaveAttribute(
+      "data-no-dnd",
+    );
   });
 });

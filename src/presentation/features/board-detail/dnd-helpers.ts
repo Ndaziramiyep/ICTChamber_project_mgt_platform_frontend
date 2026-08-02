@@ -1,4 +1,4 @@
-import { closestCenter, type CollisionDetection } from "@dnd-kit/core";
+import { closestCenter, PointerSensor, TouchSensor, type CollisionDetection } from "@dnd-kit/core";
 
 export interface DropTarget {
   columnId: string;
@@ -79,6 +79,37 @@ export const boardCollisionDetection: CollisionDetection = (args) => {
   const filteredContainers = filterDroppablesByActiveType(activeType, args.droppableContainers);
   return closestCenter({ ...args, droppableContainers: filteredContainers });
 };
+
+/**
+ * Elements marked `data-no-dnd` (or nested inside one) opt out of starting a drag — put this on
+ * a card's edit/duplicate/delete/complete buttons so the rest of the card can be grabbed from
+ * anywhere without those clicks being swallowed as a drag activation.
+ */
+function isInsideNoDndElement(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[data-no-dnd]") !== null;
+}
+
+/** `PointerSensor` that ignores pointer-downs starting inside a `data-no-dnd` element. */
+export class NoDndPointerSensor extends PointerSensor {
+  static activators = PointerSensor.activators.map((activator) => ({
+    ...activator,
+    handler: (
+      event: Parameters<(typeof PointerSensor.activators)[number]["handler"]>[0],
+      options: Parameters<(typeof PointerSensor.activators)[number]["handler"]>[1],
+    ) => !isInsideNoDndElement(event.nativeEvent.target) && activator.handler(event, options),
+  }));
+}
+
+/** `TouchSensor` that ignores touch-starts starting inside a `data-no-dnd` element. */
+export class NoDndTouchSensor extends TouchSensor {
+  static activators = TouchSensor.activators.map((activator) => ({
+    ...activator,
+    handler: (
+      event: Parameters<(typeof TouchSensor.activators)[number]["handler"]>[0],
+      options: Parameters<(typeof TouchSensor.activators)[number]["handler"]>[1],
+    ) => !isInsideNoDndElement(event.nativeEvent.target) && activator.handler(event, options),
+  }));
+}
 
 export interface TaskSiblingIds {
   previousTaskId: string | null;

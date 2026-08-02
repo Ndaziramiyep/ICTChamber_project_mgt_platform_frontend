@@ -13,6 +13,7 @@ import { Button } from "@/presentation/components/button";
 import { ConfirmDialog } from "@/presentation/components/confirm-dialog";
 import { ErrorState } from "@/presentation/components/page-status";
 import { TaskListSkeleton } from "@/presentation/components/skeleton";
+import { getColumnAccent } from "@/presentation/features/board-detail/column-accent";
 import { ColumnFormModal } from "@/presentation/features/board-detail/column-form-modal";
 import {
   TASK_SORT_OPTIONS,
@@ -35,6 +36,8 @@ export interface KanbanColumnProps {
   tasksError?: unknown;
   onRetryTasks: () => void;
   searchQuery: string;
+  /** Position among the board's columns, used to pick a distinct header color. */
+  accentIndex: number;
 }
 
 export function KanbanColumn({
@@ -46,7 +49,9 @@ export function KanbanColumn({
   tasksError,
   onRetryTasks,
   searchQuery,
+  accentIndex,
 }: KanbanColumnProps) {
+  const accent = getColumnAccent(accentIndex);
   const deleteColumnMutation = useDeleteColumnMutation();
   const deleteTaskMutation = useDeleteTaskMutation();
   const createTaskMutation = useCreateTaskMutation(column.columnId);
@@ -120,42 +125,52 @@ export function KanbanColumn({
       ref={setColumnNodeRef}
       style={columnStyle}
       className={cx(
-        "group flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm",
+        "group/column flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm",
         isColumnDragging && "opacity-40",
       )}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-white px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-1">
-          <button
-            type="button"
-            aria-label={`Drag ${column.title}`}
-            className="shrink-0 touch-none rounded p-1 text-ink-disabled opacity-0 hover:bg-surface hover:text-ink-muted focus-visible:opacity-100 group-hover:opacity-100"
-            {...columnDragAttributes}
-            {...columnDragListeners}
-          >
-            <GripVertical className="h-4 w-4" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            aria-label={isCollapsed ? `Expand ${column.title}` : `Collapse ${column.title}`}
-            onClick={() => setIsCollapsed((previous) => !previous)}
-            className="shrink-0 rounded p-1 text-ink-muted hover:bg-surface"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="h-4 w-4" aria-hidden="true" />
-            )}
-          </button>
-          <h3 className="truncate text-sm font-semibold text-ink">{column.title}</h3>
-          <span className="shrink-0 text-xs font-medium text-ink-muted">{tasks.length}</span>
-        </div>
-        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+      <div className={cx("flex items-center gap-2 px-3 py-2.5", accent.header)}>
+        <button
+          type="button"
+          aria-label={`Drag ${column.title}`}
+          className={cx(
+            "shrink-0 touch-none rounded p-1 opacity-0 hover:bg-black/10 focus-visible:opacity-100 group-hover/column:opacity-100",
+            accent.headerText,
+          )}
+          {...columnDragAttributes}
+          {...columnDragListeners}
+        >
+          <GripVertical className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          aria-label={isCollapsed ? `Expand ${column.title}` : `Collapse ${column.title}`}
+          onClick={() => setIsCollapsed((previous) => !previous)}
+          className={cx("shrink-0 rounded p-1 hover:bg-black/10", accent.headerText)}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
+        <h3 className={cx("min-w-0 flex-1 truncate text-sm font-semibold", accent.headerText)}>
+          {column.title}
+        </h3>
+        <span
+          className={cx(
+            "shrink-0 rounded-full bg-black/10 px-1.5 py-0.5 text-xs font-medium",
+            accent.headerText,
+          )}
+        >
+          {tasks.length}
+        </span>
+        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/column:opacity-100">
           <button
             type="button"
             aria-label={`Rename ${column.title}`}
             onClick={() => setIsRenameOpen(true)}
-            className="rounded p-1 text-ink-disabled hover:bg-surface hover:text-ink-muted"
+            className={cx("rounded p-1 hover:bg-black/10", accent.headerText)}
           >
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -163,7 +178,7 @@ export function KanbanColumn({
             type="button"
             aria-label={`Delete ${column.title}`}
             onClick={() => setIsDeleteColumnOpen(true)}
-            className="rounded p-1 text-ink-disabled hover:bg-error/10 hover:text-error"
+            className={cx("rounded p-1 hover:bg-black/20", accent.headerText)}
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>

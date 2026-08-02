@@ -13,15 +13,15 @@ export interface BoardCardProps {
 
 export function BoardCard({ board, onEdit, onDelete }: BoardCardProps) {
   return (
-    <Card className="flex flex-col gap-3">
+    <Card className="relative flex flex-col gap-3 transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <Link
           to={`/boards/${board.boardId}`}
-          className="text-base font-semibold text-ink hover:text-info"
+          className="text-base font-semibold text-ink after:absolute after:inset-0 hover:text-info"
         >
           {board.title}
         </Link>
-        <div className="flex shrink-0 gap-1">
+        <div className="relative z-10 flex shrink-0 gap-1">
           <button
             type="button"
             aria-label={`Edit ${board.title}`}

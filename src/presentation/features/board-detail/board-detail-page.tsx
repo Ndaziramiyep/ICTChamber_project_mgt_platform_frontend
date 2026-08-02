@@ -2,8 +2,6 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -32,6 +30,8 @@ import { ColumnsSkeleton } from "@/presentation/components/skeleton";
 import { ColumnFormModal } from "@/presentation/features/board-detail/column-form-modal";
 import {
   boardCollisionDetection,
+  NoDndPointerSensor,
+  NoDndTouchSensor,
   resolveTaskDropTarget,
   resolveTaskSiblings,
 } from "@/presentation/features/board-detail/dnd-helpers";
@@ -89,8 +89,8 @@ export function BoardDetailPage() {
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(NoDndPointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(NoDndTouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -274,8 +274,8 @@ export function BoardDetailPage() {
               items={orderedColumns.map((column) => column.columnId)}
               strategy={horizontalListSortingStrategy}
             >
-              <div className="flex items-start gap-4">
-                {orderedColumns.map((column) => {
+              <div className="flex flex-nowrap items-start gap-4">
+                {orderedColumns.map((column, index) => {
                   const columnTasksState = tasksQuery.stateByColumnId[column.columnId];
                   return (
                     <KanbanColumn
@@ -288,6 +288,7 @@ export function BoardDetailPage() {
                       tasksError={columnTasksState?.error}
                       onRetryTasks={() => columnTasksState?.refetch()}
                       searchQuery={searchQuery}
+                      accentIndex={index}
                     />
                   );
                 })}
