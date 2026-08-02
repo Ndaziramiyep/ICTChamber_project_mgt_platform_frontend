@@ -179,6 +179,26 @@ class MockBackend {
     this.tasks = this.tasks.filter((task) => task.parent_column_identifier !== columnId);
   }
 
+  reorderColumns(boardId: string, orderedColumnIds: string[]): ColumnResponseSchema[] | undefined {
+    const boardColumns = this.listColumnsByBoard(boardId);
+    const boardColumnIds = new Set(boardColumns.map((column) => column.column_identifier));
+    const providedIds = new Set(orderedColumnIds);
+    const isExactMatch =
+      orderedColumnIds.length === boardColumns.length &&
+      orderedColumnIds.every((id) => boardColumnIds.has(id)) &&
+      boardColumns.every((column) => providedIds.has(column.column_identifier));
+    if (!isExactMatch) return undefined;
+
+    orderedColumnIds.forEach((columnId, index) => {
+      const column = this.findColumn(columnId);
+      if (column) {
+        column.column_display_order = index;
+        column.updated_at = new Date().toISOString();
+      }
+    });
+    return this.listColumnsByBoard(boardId);
+  }
+
   createTask(
     columnId: string,
     title: string,
@@ -229,6 +249,45 @@ class MockBackend {
 
   deleteTask(taskId: string): void {
     this.tasks = this.tasks.filter((task) => task.task_identifier !== taskId);
+  }
+
+  repositionTask(
+    taskId: string,
+    targetColumnId: string,
+    previousTaskId: string | null,
+    nextTaskId: string | null,
+  ): TaskResponseSchema | undefined {
+    const task = this.findTask(taskId);
+    const targetColumn = this.findColumn(targetColumnId);
+    if (!task || !targetColumn) return undefined;
+
+    const siblings = this.tasks
+      .filter(
+        (candidate) =>
+          candidate.parent_column_identifier === targetColumnId &&
+          candidate.task_identifier !== taskId,
+      )
+      .sort((a, b) => a.task_position_value - b.task_position_value);
+    const previous = previousTaskId
+      ? siblings.find((candidate) => candidate.task_identifier === previousTaskId)
+      : undefined;
+    const next = nextTaskId
+      ? siblings.find((candidate) => candidate.task_identifier === nextTaskId)
+      : undefined;
+    if ((previousTaskId && !previous) || (nextTaskId && !next)) return undefined;
+
+    task.task_position_value =
+      previous && next
+        ? (previous.task_position_value + next.task_position_value) / 2
+        : previous
+          ? previous.task_position_value + 100
+          : next
+            ? next.task_position_value / 2
+            : 100;
+    task.parent_column_identifier = targetColumnId;
+    task.parent_board_identifier = targetColumn.parent_board_identifier;
+    task.updated_at = new Date().toISOString();
+    return task;
   }
 }
 
@@ -434,6 +493,32 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
+  http.put(
+    `${API_BASE_URL}/api/v1/boards/:boardId/columns/reorder`,
+    async ({ request, params }) => {
+      const result = requireAuthenticatedUserId(request);
+      if (typeof result !== "string") return result.errorResponse;
+      const board = mockBackend.findBoard(params.boardId as string);
+      if (!board) return errorResponse(404, "BoardNotFoundError", "Board not found.");
+      if (board.owning_user_identifier !== result) {
+        return errorResponse(403, "ForbiddenError", "You do not own this board.");
+      }
+      const body = (await request.json()) as { ordered_column_identifiers: string[] };
+      const reordered = mockBackend.reorderColumns(
+        board.board_identifier,
+        body.ordered_column_identifiers,
+      );
+      if (!reordered) {
+        return errorResponse(
+          404,
+          "ColumnDoesNotBelongToBoardError",
+          "The provided column list does not match the board's columns.",
+        );
+      }
+      return HttpResponse.json(reordered);
+    },
+  ),
+
   http.post(`${API_BASE_URL}/api/v1/columns/:columnId/tasks`, async ({ request, params }) => {
     const result = requireAuthenticatedUserId(request);
     if (typeof result !== "string") return result.errorResponse;
@@ -502,5 +587,35 @@ export const handlers = [
     }
     mockBackend.deleteTask(task.task_identifier);
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.patch(`${API_BASE_URL}/api/v1/tasks/:taskId/position`, async ({ request, params }) => {
+    const result = requireAuthenticatedUserId(request);
+    if (typeof result !== "string") return result.errorResponse;
+    const task = mockBackend.findTask(params.taskId as string);
+    if (!task) return errorResponse(404, "TaskNotFoundError", "Task not found.");
+    const board = mockBackend.findBoard(task.parent_board_identifier);
+    if (board?.owning_user_identifier !== result) {
+      return errorResponse(403, "ForbiddenError", "You do not own this task.");
+    }
+    const body = (await request.json()) as {
+      target_column_identifier: string;
+      previous_task_identifier: string | null;
+      next_task_identifier: string | null;
+    };
+    const updated = mockBackend.repositionTask(
+      task.task_identifier,
+      body.target_column_identifier,
+      body.previous_task_identifier ?? null,
+      body.next_task_identifier ?? null,
+    );
+    if (!updated) {
+      return errorResponse(
+        404,
+        "InvalidRepositionTargetError",
+        "The target column or sibling tasks were not found.",
+      );
+    }
+    return HttpResponse.json(updated);
   }),
 ];

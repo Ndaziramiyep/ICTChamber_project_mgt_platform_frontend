@@ -1,6 +1,7 @@
 import {
   filterDroppablesByActiveType,
   resolveTaskDropTarget,
+  resolveTaskSiblings,
 } from "@/presentation/features/board-detail/dnd-helpers";
 
 describe("resolveTaskDropTarget", () => {
@@ -46,6 +47,43 @@ describe("resolveTaskDropTarget", () => {
     };
 
     expect(resolveTaskDropTarget(over, {})).toEqual({ columnId: "b", index: 0 });
+  });
+});
+
+describe("resolveTaskSiblings", () => {
+  it("returns both neighbors when the task lands between two others", () => {
+    expect(resolveTaskSiblings("t2", ["t1", "t2", "t3"])).toEqual({
+      previousTaskId: "t1",
+      nextTaskId: "t3",
+    });
+  });
+
+  it("returns a null previousTaskId when the task lands at the top of the column", () => {
+    expect(resolveTaskSiblings("t1", ["t1", "t2", "t3"])).toEqual({
+      previousTaskId: null,
+      nextTaskId: "t2",
+    });
+  });
+
+  it("returns a null nextTaskId when the task lands at the bottom of the column", () => {
+    expect(resolveTaskSiblings("t3", ["t1", "t2", "t3"])).toEqual({
+      previousTaskId: "t2",
+      nextTaskId: null,
+    });
+  });
+
+  it("returns both null when the task is alone in the column", () => {
+    expect(resolveTaskSiblings("t1", ["t1"])).toEqual({
+      previousTaskId: null,
+      nextTaskId: null,
+    });
+  });
+
+  it("returns both null when the task id is not found in the order", () => {
+    expect(resolveTaskSiblings("missing", ["t1", "t2"])).toEqual({
+      previousTaskId: null,
+      nextTaskId: null,
+    });
   });
 });
 

@@ -79,3 +79,24 @@ export const boardCollisionDetection: CollisionDetection = (args) => {
   const filteredContainers = filterDroppablesByActiveType(activeType, args.droppableContainers);
   return closestCenter({ ...args, droppableContainers: filteredContainers });
 };
+
+export interface TaskSiblingIds {
+  previousTaskId: string | null;
+  nextTaskId: string | null;
+}
+
+/**
+ * Finds `taskId`'s immediate neighbors in `orderedTaskIds` (its column's final order after a
+ * drag), for the `previous_task_identifier`/`next_task_identifier` pair the reposition endpoint
+ * expects. Either comes back `null` when the task landed at the top/bottom of the column.
+ */
+export function resolveTaskSiblings(taskId: string, orderedTaskIds: string[]): TaskSiblingIds {
+  const index = orderedTaskIds.indexOf(taskId);
+  if (index === -1) {
+    return { previousTaskId: null, nextTaskId: null };
+  }
+  return {
+    previousTaskId: index > 0 ? (orderedTaskIds[index - 1] ?? null) : null,
+    nextTaskId: index < orderedTaskIds.length - 1 ? (orderedTaskIds[index + 1] ?? null) : null,
+  };
+}

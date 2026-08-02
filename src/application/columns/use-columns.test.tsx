@@ -4,6 +4,7 @@ import {
   useColumnsQuery,
   useCreateColumnMutation,
   useDeleteColumnMutation,
+  useReorderColumnsMutation,
   useUpdateColumnMutation,
 } from "@/application/columns/use-columns";
 import {
@@ -69,5 +70,36 @@ describe("column hooks", () => {
 
     await waitFor(() => expect(deleteHook.result.current.isSuccess).toBe(true));
     await waitFor(() => expect(list.result.current.data).toHaveLength(0));
+  });
+
+  it("reorders a board's columns and refetches them in the new order", async () => {
+    const repositories = createFakeRepositories();
+    const board = await repositories.boardRepository.createBoard({ title: "Sprint 12" });
+    const first = await repositories.columnRepository.createColumn(board.boardId, {
+      title: "To Do",
+    });
+    const second = await repositories.columnRepository.createColumn(board.boardId, {
+      title: "In Progress",
+    });
+    const wrapper = createProvidersWrapper(repositories);
+
+    const list = renderHook(() => useColumnsQuery(board.boardId), { wrapper });
+    await waitFor(() => expect(list.result.current.data).toHaveLength(2));
+
+    const reorderHook = renderHook(() => useReorderColumnsMutation(), { wrapper });
+    act(() =>
+      reorderHook.result.current.mutate({
+        boardId: board.boardId,
+        orderedColumnIds: [second.columnId, first.columnId],
+      }),
+    );
+
+    await waitFor(() => expect(reorderHook.result.current.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(list.result.current.data?.map((column) => column.columnId)).toEqual([
+        second.columnId,
+        first.columnId,
+      ]),
+    );
   });
 });

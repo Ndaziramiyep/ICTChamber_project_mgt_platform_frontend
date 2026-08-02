@@ -1,7 +1,7 @@
 import type { AxiosInstance } from "axios";
 
 import type { Task, TaskDraft } from "@/domain/entities/task";
-import type { TaskRepository } from "@/domain/repositories/task-repository";
+import type { TaskRepositionTarget, TaskRepository } from "@/domain/repositories/task-repository";
 import { mapTaskResponse } from "@/infrastructure/repositories/mappers";
 import type { TaskResponseSchema } from "@/infrastructure/repositories/wire-schemas";
 
@@ -39,5 +39,17 @@ export class HttpTaskRepository implements TaskRepository {
 
   async deleteTask(taskId: string): Promise<void> {
     await this.httpClient.delete(`/api/v1/tasks/${taskId}`);
+  }
+
+  async repositionTask(taskId: string, target: TaskRepositionTarget): Promise<Task> {
+    const response = await this.httpClient.patch<TaskResponseSchema>(
+      `/api/v1/tasks/${taskId}/position`,
+      {
+        target_column_identifier: target.targetColumnId,
+        previous_task_identifier: target.previousTaskId ?? null,
+        next_task_identifier: target.nextTaskId ?? null,
+      },
+    );
+    return mapTaskResponse(response.data);
   }
 }

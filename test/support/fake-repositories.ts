@@ -10,7 +10,7 @@ import type {
 } from "@/domain/repositories/auth-repository";
 import type { BoardRepository } from "@/domain/repositories/board-repository";
 import type { ColumnRepository } from "@/domain/repositories/column-repository";
-import type { TaskRepository } from "@/domain/repositories/task-repository";
+import type { TaskRepositionTarget, TaskRepository } from "@/domain/repositories/task-repository";
 import type { StoredTokenPair, TokenStorage } from "@/infrastructure/storage/token-storage";
 
 export function buildFakeUser(overrides: Partial<User> = {}): User {
@@ -187,6 +187,29 @@ export class FakeColumnRepository implements ColumnRepository {
   async deleteColumn(columnId: string): Promise<void> {
     this.columns = this.columns.filter((column) => column.columnId !== columnId);
   }
+
+  async reorderColumns(boardId: string, orderedColumnIds: string[]): Promise<KanbanColumn[]> {
+    const boardColumns = this.columns.filter((column) => column.parentBoardId === boardId);
+    const boardColumnIds = new Set(boardColumns.map((column) => column.columnId));
+    const providedIds = new Set(orderedColumnIds);
+    const isExactMatch =
+      orderedColumnIds.length === boardColumns.length &&
+      orderedColumnIds.every((id) => boardColumnIds.has(id)) &&
+      boardColumns.every((column) => providedIds.has(column.columnId));
+    if (!isExactMatch) {
+      throw new ApiError({
+        httpStatus: 404,
+        errorCode: "ColumnDoesNotBelongToBoardError",
+        message: "The provided column list does not match the board's columns.",
+      });
+    }
+
+    orderedColumnIds.forEach((columnId, index) => {
+      const column = this.columns.find((candidate) => candidate.columnId === columnId);
+      if (column) column.displayOrder = index;
+    });
+    return this.listColumnsByBoard(boardId);
+  }
 }
 
 /** In-memory {@link TaskRepository} fake for hook tests. */
@@ -240,5 +263,42 @@ export class FakeTaskRepository implements TaskRepository {
 
   async deleteTask(taskId: string): Promise<void> {
     this.tasks = this.tasks.filter((task) => task.taskId !== taskId);
+  }
+
+  async repositionTask(taskId: string, target: TaskRepositionTarget): Promise<Task> {
+    const task = await this.getTaskById(taskId);
+    const targetColumn = await this.columnRepository.getColumnById(target.targetColumnId);
+
+    const siblings = this.tasks
+      .filter(
+        (candidate) =>
+          candidate.parentColumnId === target.targetColumnId && candidate.taskId !== taskId,
+      )
+      .sort((a, b) => a.positionValue - b.positionValue);
+    const previous = target.previousTaskId
+      ? siblings.find((candidate) => candidate.taskId === target.previousTaskId)
+      : undefined;
+    const next = target.nextTaskId
+      ? siblings.find((candidate) => candidate.taskId === target.nextTaskId)
+      : undefined;
+    if ((target.previousTaskId && !previous) || (target.nextTaskId && !next)) {
+      throw new ApiError({
+        httpStatus: 404,
+        errorCode: "InvalidRepositionTargetError",
+        message: "The previous/next task does not belong to the target column.",
+      });
+    }
+
+    task.positionValue =
+      previous && next
+        ? (previous.positionValue + next.positionValue) / 2
+        : previous
+          ? previous.positionValue + 100
+          : next
+            ? next.positionValue / 2
+            : 100;
+    task.parentColumnId = target.targetColumnId;
+    task.parentBoardId = targetColumn.parentBoardId;
+    return task;
   }
 }

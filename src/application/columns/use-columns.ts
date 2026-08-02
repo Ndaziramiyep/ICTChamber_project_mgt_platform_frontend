@@ -54,3 +54,18 @@ export function useDeleteColumnMutation() {
     },
   });
 }
+
+export function useReorderColumnsMutation() {
+  const { columnRepository } = useRepositories();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boardId, orderedColumnIds }: { boardId: string; orderedColumnIds: string[] }) =>
+      columnRepository.reorderColumns(boardId, orderedColumnIds),
+    onSuccess: (_result, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.columns.byBoard(variables.boardId),
+      });
+    },
+  });
+}

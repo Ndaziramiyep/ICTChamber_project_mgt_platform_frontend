@@ -67,6 +67,37 @@ describe("useBoardTaskOrder", () => {
     expect(result.current.findColumnIdForTask("t1")).toBe("b");
   });
 
+  it("returns the resulting full order so the caller can persist it without waiting on a rerender", () => {
+    const tasksByColumnId = {
+      a: [buildTask({ taskId: "t1" }), buildTask({ taskId: "t2" }), buildTask({ taskId: "t3" })],
+    };
+    const { result } = renderHook(() => useBoardTaskOrder(["a"], tasksByColumnId));
+
+    let returnedOrder: Record<string, string[]> = {};
+    act(() => {
+      returnedOrder = result.current.moveTask("t1", "a", 2);
+    });
+
+    expect(returnedOrder.a).toEqual(["t2", "t3", "t1"]);
+  });
+
+  it("resetToServerOrder discards local moves and snaps back to server order", () => {
+    const tasksByColumnId = {
+      a: [buildTask({ taskId: "t1", parentColumnId: "a" })],
+      b: [buildTask({ taskId: "t2", parentColumnId: "b" })],
+    };
+    const { result } = renderHook(() => useBoardTaskOrder(["a", "b"], tasksByColumnId));
+
+    act(() => result.current.moveTask("t1", "b", 0));
+    expect(result.current.findColumnIdForTask("t1")).toBe("b");
+
+    act(() => result.current.resetToServerOrder());
+
+    expect(result.current.findColumnIdForTask("t1")).toBe("a");
+    expect(result.current.orderedTasksByColumnId.a.map((task) => task.taskId)).toEqual(["t1"]);
+    expect(result.current.orderedTasksByColumnId.b.map((task) => task.taskId)).toEqual(["t2"]);
+  });
+
   it("appends a newly created task to its server-reported column", () => {
     const initialTasksByColumnId = { a: [buildTask({ taskId: "t1" })] };
     const { result, rerender } = renderHook(

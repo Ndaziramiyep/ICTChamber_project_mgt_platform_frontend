@@ -40,6 +40,34 @@ describe("useReorderableColumns", () => {
     expect(result.current.orderedColumns.map((column) => column.columnId)).toEqual(["b", "c", "a"]);
   });
 
+  it("returns the resulting order so the caller can persist it without waiting on a rerender", () => {
+    const columns = [
+      buildColumn({ columnId: "a" }),
+      buildColumn({ columnId: "b" }),
+      buildColumn({ columnId: "c" }),
+    ];
+    const { result } = renderHook(() => useReorderableColumns(columns));
+
+    let returnedOrder: string[] | null = null;
+    act(() => {
+      returnedOrder = result.current.reorderColumns("a", "c");
+    });
+
+    expect(returnedOrder).toEqual(["b", "c", "a"]);
+  });
+
+  it("returns null for a no-op reorder", () => {
+    const columns = [buildColumn({ columnId: "a" }), buildColumn({ columnId: "b" })];
+    const { result } = renderHook(() => useReorderableColumns(columns));
+
+    let returnedOrder: string[] | null = ["placeholder"];
+    act(() => {
+      returnedOrder = result.current.reorderColumns("a", "a");
+    });
+
+    expect(returnedOrder).toBeNull();
+  });
+
   it("ignores a reorder referencing an unknown column id", () => {
     const columns = [buildColumn({ columnId: "a" }), buildColumn({ columnId: "b" })];
     const { result } = renderHook(() => useReorderableColumns(columns));
@@ -47,6 +75,24 @@ describe("useReorderableColumns", () => {
     act(() => result.current.reorderColumns("a", "missing"));
 
     expect(result.current.orderedColumns.map((column) => column.columnId)).toEqual(["a", "b"]);
+  });
+
+  it("resetToServerOrder discards a local reorder and snaps back to server order", () => {
+    const columns = [
+      buildColumn({ columnId: "a" }),
+      buildColumn({ columnId: "b" }),
+      buildColumn({ columnId: "c" }),
+    ];
+    const { result } = renderHook(() => useReorderableColumns(columns));
+
+    act(() => {
+      result.current.reorderColumns("a", "c");
+    });
+    expect(result.current.orderedColumns.map((column) => column.columnId)).toEqual(["b", "c", "a"]);
+
+    act(() => result.current.resetToServerOrder());
+
+    expect(result.current.orderedColumns.map((column) => column.columnId)).toEqual(["a", "b", "c"]);
   });
 
   it("appends a newly created column after preserving a manual reorder", () => {

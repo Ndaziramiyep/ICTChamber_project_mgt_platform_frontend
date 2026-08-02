@@ -3,6 +3,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import { queryKeys } from "@/application/query-keys";
 import { useRepositories } from "@/application/repository-provider";
 import type { Task, TaskDraft } from "@/domain/entities/task";
+import type { TaskRepositionTarget } from "@/domain/repositories/task-repository";
 
 export function useTasksQuery(columnId: string) {
   const { taskRepository } = useRepositories();
@@ -106,6 +107,33 @@ export function useDeleteTaskMutation() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.tasks.byColumn(variables.columnId),
       });
+    },
+  });
+}
+
+export function useRepositionTaskMutation() {
+  const { taskRepository } = useRepositories();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      target,
+    }: {
+      taskId: string;
+      /** The column the task was in before this move, so its stale cache entry gets invalidated too. */
+      sourceColumnId: string;
+      target: TaskRepositionTarget;
+    }) => taskRepository.repositionTask(taskId, target),
+    onSuccess: (updatedTask, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.tasks.byColumn(updatedTask.parentColumnId),
+      });
+      if (variables.sourceColumnId !== updatedTask.parentColumnId) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.tasks.byColumn(variables.sourceColumnId),
+        });
+      }
     },
   });
 }

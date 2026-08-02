@@ -42,4 +42,12 @@ export class HttpColumnRepository implements ColumnRepository {
   async deleteColumn(columnId: string): Promise<void> {
     await this.httpClient.delete(`/api/v1/columns/${columnId}`);
   }
+
+  async reorderColumns(boardId: string, orderedColumnIds: string[]): Promise<KanbanColumn[]> {
+    const response = await this.httpClient.put<ColumnResponseSchema[]>(
+      `/api/v1/boards/${boardId}/columns/reorder`,
+      { ordered_column_identifiers: orderedColumnIds },
+    );
+    return response.data.map(mapColumnResponse);
+  }
 }

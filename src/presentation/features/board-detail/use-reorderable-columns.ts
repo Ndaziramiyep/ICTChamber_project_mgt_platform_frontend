@@ -6,15 +6,22 @@ import type { KanbanColumn } from "@/domain/entities/column";
 export interface UseReorderableColumnsResult {
   /** Columns in their current display order — server order, adjusted by any local drag. */
   orderedColumns: KanbanColumn[];
-  /** Reorders by dragging `activeId` to sit where `overId` currently is. Client-side only. */
-  reorderColumns: (activeId: string, overId: string) => void;
+  /**
+   * Reorders by dragging `activeId` to sit where `overId` currently is, and returns the
+   * resulting full column-id order (or `null` if the drag was a no-op) so the caller can
+   * persist it in the same tick, without waiting on the state update to flush.
+   */
+  reorderColumns: (activeId: string, overId: string) => string[] | null;
+  /** Discards any local (unpersisted) reorder and snaps back to the server-reported order. */
+  resetToServerOrder: () => void;
 }
 
 /**
  * Tracks a local display order for a board's columns, seeded from and reconciled against the
- * server order (`GET /boards/{id}/columns`, which the backend only returns in creation order —
- * see `Project_Backend_descriptions.md`). Dragging reorders this local list only; nothing is
- * persisted, since the backend has no endpoint to save column order yet.
+ * server order (`GET /boards/{id}/columns`). Dragging reorders this local list immediately for
+ * instant visual feedback; the caller is responsible for persisting it (see
+ * `PUT /boards/{id}/columns/reorder` in `Project_Backend_descriptions.md`) and for calling
+ * `resetToServerOrder` if that persistence fails.
  */
 export function useReorderableColumns(columns: KanbanColumn[]): UseReorderableColumnsResult {
   const [localOrder, setLocalOrder] = useState<string[]>(() => columns.map((c) => c.columnId));
@@ -29,20 +36,23 @@ export function useReorderableColumns(columns: KanbanColumn[]): UseReorderableCo
     return [...kept, ...added];
   }, [columns, localOrder]);
 
-  function reorderColumns(activeId: string, overId: string): void {
-    if (activeId === overId) return;
-    setLocalOrder((prev) => {
-      const base = reconciledIds;
-      const activeIndex = base.indexOf(activeId);
-      const overIndex = base.indexOf(overId);
-      if (activeIndex === -1 || overIndex === -1) return prev;
-      return arrayMove(base, activeIndex, overIndex);
-    });
+  function reorderColumns(activeId: string, overId: string): string[] | null {
+    if (activeId === overId) return null;
+    const activeIndex = reconciledIds.indexOf(activeId);
+    const overIndex = reconciledIds.indexOf(overId);
+    if (activeIndex === -1 || overIndex === -1) return null;
+    const next = arrayMove(reconciledIds, activeIndex, overIndex);
+    setLocalOrder(next);
+    return next;
+  }
+
+  function resetToServerOrder(): void {
+    setLocalOrder(columns.map((c) => c.columnId));
   }
 
   const orderedColumns = reconciledIds
     .map((id) => columnById.get(id))
     .filter((c): c is KanbanColumn => Boolean(c));
 
-  return { orderedColumns, reorderColumns };
+  return { orderedColumns, reorderColumns, resetToServerOrder };
 }

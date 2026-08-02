@@ -21,8 +21,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { useBoardQuery } from "@/application/boards/use-boards";
-import { useColumnsQuery } from "@/application/columns/use-columns";
-import { useTasksByColumnsQuery } from "@/application/tasks/use-tasks";
+import { useColumnsQuery, useReorderColumnsMutation } from "@/application/columns/use-columns";
+import { useRepositionTaskMutation, useTasksByColumnsQuery } from "@/application/tasks/use-tasks";
 import type { KanbanColumn as KanbanColumnEntity } from "@/domain/entities/column";
 import type { Task } from "@/domain/entities/task";
 import { Button } from "@/presentation/components/button";
@@ -33,12 +33,14 @@ import { ColumnFormModal } from "@/presentation/features/board-detail/column-for
 import {
   boardCollisionDetection,
   resolveTaskDropTarget,
+  resolveTaskSiblings,
 } from "@/presentation/features/board-detail/dnd-helpers";
 import { KanbanColumn } from "@/presentation/features/board-detail/kanban-column";
 import { TaskCardPreview } from "@/presentation/features/board-detail/task-card";
 import { useBoardTaskOrder } from "@/presentation/features/board-detail/use-board-task-order";
 import { useReorderableColumns } from "@/presentation/features/board-detail/use-reorderable-columns";
 import { getErrorMessage } from "@/shared/lib/get-error-message";
+import { notify } from "@/shared/lib/notify";
 
 type ActiveDrag = { type: "column"; column: KanbanColumnEntity } | { type: "task"; task: Task };
 
@@ -46,21 +48,29 @@ export function BoardDetailPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hasUnsavedOrderChanges, setHasUnsavedOrderChanges] = useState(false);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const boardQuery = useBoardQuery(boardId ?? "");
   const columnsQuery = useColumnsQuery(boardId ?? "");
   const columns = useMemo(() => columnsQuery.data ?? [], [columnsQuery.data]);
-  const { orderedColumns, reorderColumns } = useReorderableColumns(columns);
+  const {
+    orderedColumns,
+    reorderColumns,
+    resetToServerOrder: resetColumnOrder,
+  } = useReorderableColumns(columns);
 
   const columnIds = useMemo(() => columns.map((column) => column.columnId), [columns]);
   const tasksQuery = useTasksByColumnsQuery(columnIds);
-  const { orderedTasksByColumnId, moveTask, findColumnIdForTask } = useBoardTaskOrder(
-    columnIds,
-    tasksQuery.tasksByColumnId,
-  );
+  const {
+    orderedTasksByColumnId,
+    moveTask,
+    findColumnIdForTask,
+    resetToServerOrder: resetTaskOrder,
+  } = useBoardTaskOrder(columnIds, tasksQuery.tasksByColumnId);
+
+  const reorderColumnsMutation = useReorderColumnsMutation();
+  const repositionTaskMutation = useRepositionTaskMutation();
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -121,18 +131,28 @@ export function BoardDetailPage() {
     const currentColumnId = findColumnIdForTask(taskId);
     if (currentColumnId === dropTarget.columnId) return;
     moveTask(taskId, dropTarget.columnId, dropTarget.index);
-    setHasUnsavedOrderChanges(true);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const dragType = (event.active.data.current as { type?: string } | undefined)?.type;
+    const draggedSnapshot = activeDrag;
     setActiveDrag(null);
-    if (!event.over) return;
+    if (!event.over || !boardId) return;
 
     if (dragType === "column") {
       if (event.active.id !== event.over.id) {
-        reorderColumns(String(event.active.id), String(event.over.id));
-        setHasUnsavedOrderChanges(true);
+        const newOrder = reorderColumns(String(event.active.id), String(event.over.id));
+        if (newOrder) {
+          reorderColumnsMutation.mutate(
+            { boardId, orderedColumnIds: newOrder },
+            {
+              onError: (error) => {
+                resetColumnOrder();
+                notify.error(getErrorMessage(error));
+              },
+            },
+          );
+        }
       }
       return;
     }
@@ -140,10 +160,31 @@ export function BoardDetailPage() {
     if (dragType === "task") {
       const taskId = String(event.active.id);
       const dropTarget = resolveTaskDropTarget(event.over as Over, buildColumnTaskIdMap());
-      if (dropTarget) {
-        moveTask(taskId, dropTarget.columnId, dropTarget.index);
-        setHasUnsavedOrderChanges(true);
-      }
+      if (!dropTarget) return;
+
+      const sourceColumnId =
+        draggedSnapshot?.type === "task"
+          ? draggedSnapshot.task.parentColumnId
+          : dropTarget.columnId;
+      const nextOrder = moveTask(taskId, dropTarget.columnId, dropTarget.index);
+      const { previousTaskId, nextTaskId } = resolveTaskSiblings(
+        taskId,
+        nextOrder[dropTarget.columnId] ?? [],
+      );
+
+      repositionTaskMutation.mutate(
+        {
+          taskId,
+          sourceColumnId,
+          target: { targetColumnId: dropTarget.columnId, previousTaskId, nextTaskId },
+        },
+        {
+          onError: (error) => {
+            resetTaskOrder();
+            notify.error(getErrorMessage(error));
+          },
+        },
+      );
     }
   }
 
@@ -203,13 +244,6 @@ export function BoardDetailPage() {
           ) : null}
         </div>
       </header>
-
-      {hasUnsavedOrderChanges ? (
-        <div className="border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-ink">
-          Card and column order isn&apos;t saved yet — the backend doesn&apos;t support persisting
-          order, so refreshing this page resets it to the original order.
-        </div>
-      ) : null}
 
       <main className="flex-1 overflow-x-auto bg-surface px-6 py-6">
         {columnsQuery.isPending ? <ColumnsSkeleton /> : null}

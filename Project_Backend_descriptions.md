@@ -204,32 +204,76 @@ stored access token) to restore the session without asking the user to log in ag
 
 ### Resource endpoints
 
-| Method | Path                                        | Description                     | Request body                  | Success response               |
-| ------ | ------------------------------------------- | ------------------------------- | ----------------------------- | ------------------------------ |
-| POST   | `/api/v1/boards`                            | Create a board                  | `BoardCreationRequestSchema`  | `201` `BoardResponseSchema`    |
-| GET    | `/api/v1/boards`                            | List your boards                | –                             | `200` `BoardResponseSchema[]`  |
-| GET    | `/api/v1/boards/{board_identifier}`         | Get one board                   | –                             | `200` `BoardResponseSchema`    |
-| PUT    | `/api/v1/boards/{board_identifier}`         | Rename/describe a board         | `BoardUpdateRequestSchema`    | `200` `BoardResponseSchema`    |
-| DELETE | `/api/v1/boards/{board_identifier}`         | Delete a board                  | –                             | `204 No Content`               |
-| POST   | `/api/v1/boards/{board_identifier}/columns` | Add a column to a board         | `ColumnCreationRequestSchema` | `201` `ColumnResponseSchema`   |
-| GET    | `/api/v1/boards/{board_identifier}/columns` | List a board's columns          | –                             | `200` `ColumnResponseSchema[]` |
-| GET    | `/api/v1/columns/{column_identifier}`       | Get one column                  | –                             | `200` `ColumnResponseSchema`   |
-| PUT    | `/api/v1/columns/{column_identifier}`       | Rename a column                 | `ColumnUpdateRequestSchema`   | `200` `ColumnResponseSchema`   |
-| DELETE | `/api/v1/columns/{column_identifier}`       | Delete a column                 | –                             | `204 No Content`               |
-| POST   | `/api/v1/columns/{column_identifier}/tasks` | Add a task to a column          | `TaskCreationRequestSchema`   | `201` `TaskResponseSchema`     |
-| GET    | `/api/v1/columns/{column_identifier}/tasks` | List a column's tasks           | –                             | `200` `TaskResponseSchema[]`   |
-| GET    | `/api/v1/tasks/{task_identifier}`           | Get one task                    | –                             | `200` `TaskResponseSchema`     |
-| PUT    | `/api/v1/tasks/{task_identifier}`           | Edit a task's title/description | `TaskUpdateRequestSchema`     | `200` `TaskResponseSchema`     |
-| DELETE | `/api/v1/tasks/{task_identifier}`           | Delete a task                   | –                             | `204 No Content`               |
-| GET    | `/api/v1/health`                            | Liveness check (no auth)        | –                             | `200` `{"status": "healthy"}`  |
+| Method | Path                                                | Description                     | Request body                  | Success response               |
+| ------ | --------------------------------------------------- | ------------------------------- | ----------------------------- | ------------------------------ |
+| POST   | `/api/v1/boards`                                    | Create a board                  | `BoardCreationRequestSchema`  | `201` `BoardResponseSchema`    |
+| GET    | `/api/v1/boards`                                    | List your boards                | –                             | `200` `BoardResponseSchema[]`  |
+| GET    | `/api/v1/boards/{board_identifier}`                 | Get one board                   | –                             | `200` `BoardResponseSchema`    |
+| PUT    | `/api/v1/boards/{board_identifier}`                 | Rename/describe a board         | `BoardUpdateRequestSchema`    | `200` `BoardResponseSchema`    |
+| DELETE | `/api/v1/boards/{board_identifier}`                 | Delete a board                  | –                             | `204 No Content`               |
+| POST   | `/api/v1/boards/{board_identifier}/columns`         | Add a column to a board         | `ColumnCreationRequestSchema` | `201` `ColumnResponseSchema`   |
+| GET    | `/api/v1/boards/{board_identifier}/columns`         | List a board's columns          | –                             | `200` `ColumnResponseSchema[]` |
+| GET    | `/api/v1/columns/{column_identifier}`               | Get one column                  | –                             | `200` `ColumnResponseSchema`   |
+| PUT    | `/api/v1/columns/{column_identifier}`               | Rename a column                 | `ColumnUpdateRequestSchema`   | `200` `ColumnResponseSchema`   |
+| DELETE | `/api/v1/columns/{column_identifier}`               | Delete a column                 | –                             | `204 No Content`               |
+| POST   | `/api/v1/columns/{column_identifier}/tasks`         | Add a task to a column          | `TaskCreationRequestSchema`   | `201` `TaskResponseSchema`     |
+| GET    | `/api/v1/columns/{column_identifier}/tasks`         | List a column's tasks           | –                             | `200` `TaskResponseSchema[]`   |
+| GET    | `/api/v1/tasks/{task_identifier}`                   | Get one task                    | –                             | `200` `TaskResponseSchema`     |
+| PUT    | `/api/v1/tasks/{task_identifier}`                   | Edit a task's title/description | `TaskUpdateRequestSchema`     | `200` `TaskResponseSchema`     |
+| PATCH  | `/api/v1/tasks/{task_identifier}/position`          | Move/reorder a task             | `TaskRepositionRequestSchema` | `200` `TaskResponseSchema`     |
+| DELETE | `/api/v1/tasks/{task_identifier}`                   | Delete a task                   | –                             | `204 No Content`               |
+| PUT    | `/api/v1/boards/{board_identifier}/columns/reorder` | Reorder a board's columns       | `ColumnReorderRequestSchema`  | `200` `ColumnResponseSchema[]` |
+| GET    | `/api/v1/health`                                    | Liveness check (no auth)        | –                             | `200` `{"status": "healthy"}`  |
 
 Deleting a board cascades to its columns and tasks; deleting a column cascades to its tasks.
 
 Lists are returned pre-sorted: columns by `column_display_order` ascending, tasks by
 `task_position_value` ascending. New columns/tasks are appended after the current highest value
-in their parent. **Drag-and-drop reordering endpoints do not exist yet** —
-`column_display_order` and `task_position_value` are currently read-only and only reflect
-creation order; do not build a reorder/drag-and-drop UI against this API until that ships.
+in their parent.
+
+#### Drag-and-drop: reordering columns
+
+`PUT /api/v1/boards/{board_identifier}/columns/reorder` persists a full new left-to-right order
+for every column on the board in one call. `ColumnReorderRequestSchema`:
+
+```json
+{ "ordered_column_identifiers": ["665f...columnC", "665f...columnA", "665f...columnB"] }
+```
+
+The list must contain every column currently belonging to the board, each exactly once — after a
+column drag-and-drop, send the client's full new column order. The response is the reordered
+`ColumnResponseSchema[]` with `column_display_order` reassigned to match (`0, 1, 2, ...`).
+Errors: `404` (`ColumnDoesNotBelongToBoardError`) if the list omits a column or references one that
+isn't part of this board; `403` if the requester doesn't own the board.
+
+#### Drag-and-drop: moving/reordering tasks
+
+`PATCH /api/v1/tasks/{task_identifier}/position` moves a task to a new column and/or a new
+position among its siblings — this covers both an in-column reorder and a cross-column move (the
+same endpoint handles both). `TaskRepositionRequestSchema`:
+
+```json
+{
+  "target_column_identifier": "665f...column",
+  "previous_task_identifier": "665f...taskAbove",
+  "next_task_identifier": "665f...taskBelow"
+}
+```
+
+- `target_column_identifier`: the column the task should end up in (same as its current column for
+  an in-column reorder, or a different one to move it across columns).
+- `previous_task_identifier` / `next_task_identifier`: the identifiers of the tasks that should end
+  up immediately before/after it in `target_column_identifier`, taken from the client's own reordered
+  list. Either may be omitted (or `null`) to mean "top of the column" / "bottom of the column"; omit
+  both to drop the task at the bottom.
+- The task's new `task_position_value` is computed server-side (a value between its new neighbors);
+  the response's updated `TaskResponseSchema` reflects it, and it need not be recomputed
+  client-side.
+
+Errors: `404` (`TaskNotFoundError`/`ColumnNotFoundError`) if the task or target column doesn't
+exist; `404` (`InvalidReorderTargetError`) if `previous_task_identifier`/`next_task_identifier`
+don't belong to `target_column_identifier` or aren't adjacent siblings there; `403` if the
+requester doesn't own the task's board or the target column's board.
 
 #### Schema field reference
 

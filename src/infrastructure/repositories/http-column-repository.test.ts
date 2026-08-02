@@ -63,4 +63,43 @@ describe("HttpColumnRepository", () => {
       httpStatus: 403,
     });
   });
+
+  it("persists a new column order", async () => {
+    const httpClient = await createAuthenticatedHttpClient();
+    const board = await new HttpBoardRepository(httpClient).createBoard({ title: "Sprint 12" });
+    const columnRepository = new HttpColumnRepository(httpClient);
+    const first = await columnRepository.createColumn(board.boardId, { title: "To Do" });
+    const second = await columnRepository.createColumn(board.boardId, { title: "In Progress" });
+    const third = await columnRepository.createColumn(board.boardId, { title: "Done" });
+
+    const reordered = await columnRepository.reorderColumns(board.boardId, [
+      third.columnId,
+      first.columnId,
+      second.columnId,
+    ]);
+
+    expect(reordered.map((column) => column.columnId)).toEqual([
+      third.columnId,
+      first.columnId,
+      second.columnId,
+    ]);
+    const refetched = await columnRepository.listColumnsByBoard(board.boardId);
+    expect(refetched.map((column) => column.columnId)).toEqual([
+      third.columnId,
+      first.columnId,
+      second.columnId,
+    ]);
+  });
+
+  it("rejects reordering with a list that omits one of the board's columns", async () => {
+    const httpClient = await createAuthenticatedHttpClient();
+    const board = await new HttpBoardRepository(httpClient).createBoard({ title: "Sprint 12" });
+    const columnRepository = new HttpColumnRepository(httpClient);
+    const first = await columnRepository.createColumn(board.boardId, { title: "To Do" });
+    await columnRepository.createColumn(board.boardId, { title: "In Progress" });
+
+    await expect(
+      columnRepository.reorderColumns(board.boardId, [first.columnId]),
+    ).rejects.toMatchObject({ httpStatus: 404 });
+  });
 });

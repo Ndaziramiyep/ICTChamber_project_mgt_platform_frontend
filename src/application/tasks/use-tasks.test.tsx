@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import {
   useCreateTaskMutation,
   useDeleteTaskMutation,
+  useRepositionTaskMutation,
   useTasksQuery,
   useUpdateTaskMutation,
 } from "@/application/tasks/use-tasks";
@@ -77,5 +78,73 @@ describe("task hooks", () => {
 
     await waitFor(() => expect(deleteHook.result.current.isSuccess).toBe(true));
     await waitFor(() => expect(list.result.current.data).toHaveLength(0));
+  });
+
+  it("reorders a task within the same column", async () => {
+    const repositories = createFakeRepositories();
+    const board = await repositories.boardRepository.createBoard({ title: "Sprint 12" });
+    const column = await repositories.columnRepository.createColumn(board.boardId, {
+      title: "To Do",
+    });
+    const first = await repositories.taskRepository.createTask(column.columnId, {
+      title: "First",
+    });
+    const second = await repositories.taskRepository.createTask(column.columnId, {
+      title: "Second",
+    });
+    const wrapper = createProvidersWrapper(repositories);
+
+    const list = renderHook(() => useTasksQuery(column.columnId), { wrapper });
+    await waitFor(() => expect(list.result.current.data).toHaveLength(2));
+
+    const repositionHook = renderHook(() => useRepositionTaskMutation(), { wrapper });
+    act(() =>
+      repositionHook.result.current.mutate({
+        taskId: second.taskId,
+        sourceColumnId: column.columnId,
+        target: { targetColumnId: column.columnId, previousTaskId: null, nextTaskId: first.taskId },
+      }),
+    );
+
+    await waitFor(() => expect(repositionHook.result.current.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(list.result.current.data?.map((task) => task.taskId)).toEqual([
+        second.taskId,
+        first.taskId,
+      ]),
+    );
+  });
+
+  it("moves a task into a different column and invalidates both columns' task lists", async () => {
+    const repositories = createFakeRepositories();
+    const board = await repositories.boardRepository.createBoard({ title: "Sprint 12" });
+    const columnA = await repositories.columnRepository.createColumn(board.boardId, {
+      title: "To Do",
+    });
+    const columnB = await repositories.columnRepository.createColumn(board.boardId, {
+      title: "Done",
+    });
+    const task = await repositories.taskRepository.createTask(columnA.columnId, {
+      title: "Wire up login form",
+    });
+    const wrapper = createProvidersWrapper(repositories);
+
+    const listA = renderHook(() => useTasksQuery(columnA.columnId), { wrapper });
+    const listB = renderHook(() => useTasksQuery(columnB.columnId), { wrapper });
+    await waitFor(() => expect(listA.result.current.data).toHaveLength(1));
+    await waitFor(() => expect(listB.result.current.data).toHaveLength(0));
+
+    const repositionHook = renderHook(() => useRepositionTaskMutation(), { wrapper });
+    act(() =>
+      repositionHook.result.current.mutate({
+        taskId: task.taskId,
+        sourceColumnId: columnA.columnId,
+        target: { targetColumnId: columnB.columnId },
+      }),
+    );
+
+    await waitFor(() => expect(repositionHook.result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(listA.result.current.data).toHaveLength(0));
+    await waitFor(() => expect(listB.result.current.data).toHaveLength(1));
   });
 });

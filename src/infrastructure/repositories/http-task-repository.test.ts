@@ -79,4 +79,45 @@ describe("HttpTaskRepository", () => {
       httpStatus: 403,
     });
   });
+
+  it("repositions a task between two siblings in the same column", async () => {
+    const httpClient = await createAuthenticatedHttpClient();
+    const column = await createColumnInNewBoard(httpClient);
+    const taskRepository = new HttpTaskRepository(httpClient);
+    const first = await taskRepository.createTask(column.columnId, { title: "First" });
+    const second = await taskRepository.createTask(column.columnId, { title: "Second" });
+    const third = await taskRepository.createTask(column.columnId, { title: "Third" });
+
+    const repositioned = await taskRepository.repositionTask(third.taskId, {
+      targetColumnId: column.columnId,
+      previousTaskId: first.taskId,
+      nextTaskId: second.taskId,
+    });
+
+    expect(repositioned.positionValue).toBeGreaterThan(first.positionValue);
+    expect(repositioned.positionValue).toBeLessThan(second.positionValue);
+    const tasks = await taskRepository.listTasksByColumn(column.columnId);
+    expect(tasks.map((task) => task.taskId)).toEqual([first.taskId, third.taskId, second.taskId]);
+  });
+
+  it("moves a task into a different column", async () => {
+    const httpClient = await createAuthenticatedHttpClient();
+    const boardRepository = new HttpBoardRepository(httpClient);
+    const columnRepository = new HttpColumnRepository(httpClient);
+    const taskRepository = new HttpTaskRepository(httpClient);
+    const board = await boardRepository.createBoard({ title: "Sprint 12" });
+    const columnA = await columnRepository.createColumn(board.boardId, { title: "To Do" });
+    const columnB = await columnRepository.createColumn(board.boardId, { title: "Done" });
+    const task = await taskRepository.createTask(columnA.columnId, { title: "Wire up login" });
+
+    const moved = await taskRepository.repositionTask(task.taskId, {
+      targetColumnId: columnB.columnId,
+    });
+
+    expect(moved.parentColumnId).toBe(columnB.columnId);
+    expect(await taskRepository.listTasksByColumn(columnA.columnId)).toEqual([]);
+    expect((await taskRepository.listTasksByColumn(columnB.columnId)).map((t) => t.taskId)).toEqual(
+      [task.taskId],
+    );
+  });
 });

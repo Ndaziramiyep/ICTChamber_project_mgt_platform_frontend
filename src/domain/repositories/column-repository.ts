@@ -7,4 +7,6 @@ export interface ColumnRepository {
   createColumn(boardId: string, draft: ColumnDraft): Promise<KanbanColumn>;
   updateColumn(columnId: string, draft: ColumnDraft): Promise<KanbanColumn>;
   deleteColumn(columnId: string): Promise<void>;
+  /** Persists a full new left-to-right order for every column on the board. */
+  reorderColumns(boardId: string, orderedColumnIds: string[]): Promise<KanbanColumn[]>;
 }
