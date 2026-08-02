@@ -15,7 +15,7 @@
     "test": "jest --maxWorkers=50%",
     "test:watch": "jest --watch --maxWorkers=50%",
     "test:coverage": "jest --coverage --maxWorkers=50%",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
