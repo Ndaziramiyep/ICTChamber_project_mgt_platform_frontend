@@ -75,14 +75,7 @@ export function TaskCard({
           >
             <Check className="h-3 w-3" aria-hidden="true" />
           </button>
-          <p
-            className={cx(
-              "text-sm font-medium wrap-break-word",
-              isComplete ? "text-ink-disabled line-through" : "text-ink",
-            )}
-          >
-            {task.title}
-          </p>
+          <p className="text-sm font-medium wrap-break-word text-ink">{task.title}</p>
         </div>
         <div className="flex shrink-0 gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/task:opacity-100">
           <button
@@ -115,14 +108,7 @@ export function TaskCard({
         </div>
       </div>
       {task.description ? (
-        <p
-          className={cx(
-            "line-clamp-3 text-xs",
-            isComplete ? "text-ink-disabled" : "text-ink-muted",
-          )}
-        >
-          {task.description}
-        </p>
+        <p className="line-clamp-3 text-xs text-ink-muted">{task.description}</p>
       ) : null}
     </Card>
   );

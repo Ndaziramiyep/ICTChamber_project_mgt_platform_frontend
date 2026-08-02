@@ -82,7 +82,7 @@ describe("TaskCard", () => {
     expect(container.firstChild).toHaveAttribute("aria-disabled", "true");
   });
 
-  it("toggles the complete checkbox and applies a strikethrough to the title", async () => {
+  it("toggles the complete checkbox without altering the title's styling", async () => {
     render(
       <TaskCard
         task={task}
@@ -95,7 +95,6 @@ describe("TaskCard", () => {
 
     const checkbox = screen.getByRole("checkbox", { name: "Mark Wire up login form complete" });
     expect(checkbox).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByText("Wire up login form")).not.toHaveClass("line-through");
 
     await userEvent.click(checkbox);
 
@@ -103,7 +102,7 @@ describe("TaskCard", () => {
     expect(
       screen.getByRole("checkbox", { name: "Mark Wire up login form incomplete" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Wire up login form")).toHaveClass("line-through");
+    expect(screen.getByText("Wire up login form")).not.toHaveClass("line-through");
   });
 
   it("does not start a drag from the edit, duplicate, delete, or complete buttons", () => {
