@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { Task } from "@/domain/entities/task";
 import { Card } from "@/presentation/components/card";
 import { cx } from "@/shared/lib/class-names";
+import { readIsTaskComplete, writeIsTaskComplete } from "@/shared/lib/task-complete-storage";
 
 export interface TaskCardProps {
   task: Task;
@@ -34,9 +35,17 @@ export function TaskCard({
     disabled: isDragDisabled,
   });
 
-  // Local-only: the backend has no "completed" field on tasks yet, so this doesn't persist and
-  // resets on reload — see BACKEND_EXTENSIONS_NEEDED.md.
-  const [isComplete, setIsComplete] = useState(false);
+  // The backend has no "completed" field on tasks yet (see BACKEND_EXTENSIONS_NEEDED.md), so
+  // this is remembered in localStorage instead — real persistence, just not server-backed.
+  const [isComplete, setIsComplete] = useState(() => readIsTaskComplete(task.taskId));
+
+  function handleToggleComplete() {
+    setIsComplete((previous) => {
+      const next = !previous;
+      writeIsTaskComplete(task.taskId, next);
+      return next;
+    });
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -65,7 +74,7 @@ export function TaskCard({
             aria-label={
               isComplete ? `Mark ${task.title} incomplete` : `Mark ${task.title} complete`
             }
-            onClick={() => setIsComplete((previous) => !previous)}
+            onClick={handleToggleComplete}
             className={cx(
               "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
               isComplete

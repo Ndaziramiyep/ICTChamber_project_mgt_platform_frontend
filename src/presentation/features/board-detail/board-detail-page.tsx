@@ -10,7 +10,7 @@ import {
   type Over,
 } from "@dnd-kit/core";
 import {
-  horizontalListSortingStrategy,
+  rectSortingStrategy,
   sortableKeyboardCoordinates,
   SortableContext,
 } from "@dnd-kit/sortable";
@@ -195,57 +195,61 @@ export function BoardDetailPage() {
   return (
     <div className="flex h-full flex-col">
       <header className="border-b border-divider bg-white px-6 py-4">
-        <Link
-          to="/boards"
-          className="inline-flex items-center gap-1 text-sm font-medium text-info hover:opacity-80"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          All boards
-        </Link>
-
-        {boardQuery.isPending ? (
-          <p className="mt-2 text-sm text-ink-disabled">Loading board…</p>
-        ) : null}
-        {boardQuery.isError ? (
-          <p className="mt-2 text-sm text-error">{getErrorMessage(boardQuery.error)}</p>
-        ) : null}
-        {boardQuery.isSuccess ? (
-          <>
-            <h1 className="mt-1 text-xl font-bold text-ink">{boardQuery.data.title}</h1>
-            {boardQuery.data.description ? (
-              <p className="mt-1 text-sm text-ink-muted">{boardQuery.data.description}</p>
-            ) : null}
-          </>
-        ) : null}
-
-        <div className="relative mt-3 max-w-sm">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-ink-disabled"
-            aria-hidden="true"
-          />
-          <input
-            ref={searchInputRef}
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search tasks… (press / to focus)"
-            aria-label="Search tasks"
-            className="w-full rounded-md border border-input-border py-1.5 pr-8 pl-8 text-sm placeholder:text-ink-disabled focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-input-focus"
-          />
-          {searchQuery ? (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => setSearchQuery("")}
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-ink-disabled hover:bg-surface hover:text-ink-muted"
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <Link
+              to="/boards"
+              className="inline-flex items-center gap-1 text-sm font-medium text-info hover:opacity-80"
             >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          ) : null}
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              All boards
+            </Link>
+
+            {boardQuery.isPending ? (
+              <p className="mt-1 text-sm text-ink-disabled">Loading board…</p>
+            ) : null}
+            {boardQuery.isError ? (
+              <p className="mt-1 text-sm text-error">{getErrorMessage(boardQuery.error)}</p>
+            ) : null}
+            {boardQuery.isSuccess ? (
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+                <h1 className="text-xl font-bold text-ink">{boardQuery.data.title}</h1>
+                {boardQuery.data.description ? (
+                  <p className="truncate text-sm text-ink-muted">{boardQuery.data.description}</p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="relative w-full sm:w-64 sm:shrink-0">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-ink-disabled"
+              aria-hidden="true"
+            />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search tasks… (press / to focus)"
+              aria-label="Search tasks"
+              className="w-full rounded-md border border-input-border py-1.5 pr-8 pl-8 text-sm placeholder:text-ink-disabled focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-input-focus"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setSearchQuery("")}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-ink-disabled hover:bg-surface hover:text-ink-muted"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-x-auto bg-surface px-6 py-6">
+      <main className="flex-1 overflow-y-auto bg-surface px-6 py-6">
         {columnsQuery.isPending ? <ColumnsSkeleton /> : null}
         {columnsQuery.isError ? (
           <ErrorState
@@ -272,9 +276,9 @@ export function BoardDetailPage() {
           >
             <SortableContext
               items={orderedColumns.map((column) => column.columnId)}
-              strategy={horizontalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
-              <div className="flex flex-nowrap items-start gap-4">
+              <div className="flex flex-wrap items-start gap-4">
                 {orderedColumns.map((column, index) => {
                   const columnTasksState = tasksQuery.stateByColumnId[column.columnId];
                   return (

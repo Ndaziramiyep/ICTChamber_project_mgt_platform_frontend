@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 
 import type { Task } from "@/domain/entities/task";
 import { TaskCard } from "@/presentation/features/board-detail/task-card";
+import { writeIsTaskComplete } from "@/shared/lib/task-complete-storage";
 
 const task: Task = {
   taskId: "task-1",
@@ -16,6 +17,10 @@ const task: Task = {
 };
 
 describe("TaskCard", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it("renders the title and description", () => {
     render(
       <TaskCard
@@ -103,6 +108,53 @@ describe("TaskCard", () => {
       screen.getByRole("checkbox", { name: "Mark Wire up login form incomplete" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Wire up login form")).not.toHaveClass("line-through");
+  });
+
+  it("starts complete when localStorage already marks this task complete", () => {
+    writeIsTaskComplete("task-1", true);
+    render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("checkbox", { name: "Mark Wire up login form incomplete" }),
+    ).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("remembers the complete toggle across remounts (e.g. a page reload)", async () => {
+    const { unmount } = render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Mark Wire up login form complete" }),
+    );
+    unmount();
+
+    render(
+      <TaskCard
+        task={task}
+        columnId="column-1"
+        onEdit={jest.fn()}
+        onDuplicate={jest.fn()}
+        onDelete={jest.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("checkbox", { name: "Mark Wire up login form incomplete" }),
+    ).toHaveAttribute("aria-checked", "true");
   });
 
   it("does not start a drag from the edit, duplicate, delete, or complete buttons", () => {

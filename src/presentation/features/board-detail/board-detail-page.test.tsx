@@ -87,7 +87,7 @@ describe("BoardDetailPage", () => {
     expect(await screen.findByText("No columns yet")).toBeInTheDocument();
   });
 
-  it("keeps many columns in a single non-wrapping row so they scroll horizontally", async () => {
+  it("wraps many columns onto additional rows instead of forcing horizontal scroll", async () => {
     const repositories = createFakeRepositories();
     const board = await repositories.boardRepository.createBoard({ title: "Sprint 12" });
     for (let index = 0; index < 6; index += 1) {
@@ -98,9 +98,9 @@ describe("BoardDetailPage", () => {
     const { container } = renderBoardDetailPage(board.boardId, repositories);
 
     await screen.findByRole("heading", { name: "Column 0" });
-    const row = container.querySelector(".flex-nowrap");
+    const row = container.querySelector("main .flex-wrap");
     expect(row).not.toBeNull();
-    expect(row).toHaveClass("flex", "flex-nowrap");
+    expect(row).toHaveClass("flex", "flex-wrap");
     expect(row?.children.length).toBe(7); // 6 columns + the "Add column" button
   });
 
