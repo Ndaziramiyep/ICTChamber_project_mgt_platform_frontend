@@ -35,7 +35,7 @@ export function BoardsListPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Your boards</h1>
+        <h1 className="text-2xl font-bold text-ink">Your boards</h1>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4" aria-hidden="true" />
           New board

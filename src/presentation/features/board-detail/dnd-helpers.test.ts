@@ -1,4 +1,7 @@
-import { resolveTaskDropTarget } from "@/presentation/features/board-detail/dnd-helpers";
+import {
+  filterDroppablesByActiveType,
+  resolveTaskDropTarget,
+} from "@/presentation/features/board-detail/dnd-helpers";
 
 describe("resolveTaskDropTarget", () => {
   it("returns null when there is no drop target", () => {
@@ -43,5 +46,32 @@ describe("resolveTaskDropTarget", () => {
     };
 
     expect(resolveTaskDropTarget(over, {})).toEqual({ columnId: "b", index: 0 });
+  });
+});
+
+describe("filterDroppablesByActiveType", () => {
+  const containers = [
+    { id: "column-a", data: { current: { type: "column" as const } } },
+    { id: "column-b", data: { current: { type: "column" as const } } },
+    { id: "container-a", data: { current: { type: "column-container" as const, columnId: "a" } } },
+    { id: "task-1", data: { current: { type: "task" as const, columnId: "a" } } },
+  ];
+
+  it("restricts a dragged column to colliding only with other columns", () => {
+    const filtered = filterDroppablesByActiveType("column", containers);
+
+    expect(filtered.map((container) => container.id)).toEqual(["column-a", "column-b"]);
+  });
+
+  it("restricts a dragged task to colliding only with tasks or column-containers", () => {
+    const filtered = filterDroppablesByActiveType("task", containers);
+
+    expect(filtered.map((container) => container.id)).toEqual(["container-a", "task-1"]);
+  });
+
+  it("passes everything through for an unrecognized active type", () => {
+    const filtered = filterDroppablesByActiveType(undefined, containers);
+
+    expect(filtered).toHaveLength(containers.length);
   });
 });

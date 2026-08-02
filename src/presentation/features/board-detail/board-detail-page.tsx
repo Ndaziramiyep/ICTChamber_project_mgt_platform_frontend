@@ -1,5 +1,4 @@
 import {
-  closestCenter,
   DndContext,
   DragOverlay,
   KeyboardSensor,
@@ -30,18 +29,18 @@ import { Button } from "@/presentation/components/button";
 import { EmptyState } from "@/presentation/components/empty-state";
 import { ErrorState } from "@/presentation/components/page-status";
 import { ColumnsSkeleton } from "@/presentation/components/skeleton";
-import { getColumnAccent } from "@/presentation/features/board-detail/column-accent";
 import { ColumnFormModal } from "@/presentation/features/board-detail/column-form-modal";
-import { resolveTaskDropTarget } from "@/presentation/features/board-detail/dnd-helpers";
+import {
+  boardCollisionDetection,
+  resolveTaskDropTarget,
+} from "@/presentation/features/board-detail/dnd-helpers";
 import { KanbanColumn } from "@/presentation/features/board-detail/kanban-column";
 import { TaskCardPreview } from "@/presentation/features/board-detail/task-card";
 import { useBoardTaskOrder } from "@/presentation/features/board-detail/use-board-task-order";
 import { useReorderableColumns } from "@/presentation/features/board-detail/use-reorderable-columns";
 import { getErrorMessage } from "@/shared/lib/get-error-message";
 
-type ActiveDrag =
-  | { type: "column"; column: KanbanColumnEntity; accentIndex: number }
-  | { type: "task"; task: Task };
+type ActiveDrag = { type: "column"; column: KanbanColumnEntity } | { type: "task"; task: Task };
 
 export function BoardDetailPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -96,9 +95,8 @@ export function BoardDetailPage() {
   function handleDragStart(event: DragStartEvent) {
     const dragType = (event.active.data.current as { type?: string } | undefined)?.type;
     if (dragType === "column") {
-      const index = orderedColumns.findIndex((column) => column.columnId === event.active.id);
-      const column = orderedColumns[index];
-      if (column) setActiveDrag({ type: "column", column, accentIndex: index });
+      const column = orderedColumns.find((candidate) => candidate.columnId === event.active.id);
+      if (column) setActiveDrag({ type: "column", column });
       return;
     }
     if (dragType === "task") {
@@ -155,33 +153,33 @@ export function BoardDetailPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-b border-slate-200 bg-white px-6 py-4">
+      <header className="border-b border-divider bg-white px-6 py-4">
         <Link
           to="/boards"
-          className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+          className="inline-flex items-center gap-1 text-sm font-medium text-info hover:opacity-80"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           All boards
         </Link>
 
         {boardQuery.isPending ? (
-          <p className="mt-2 text-sm text-slate-400">Loading board…</p>
+          <p className="mt-2 text-sm text-ink-disabled">Loading board…</p>
         ) : null}
         {boardQuery.isError ? (
-          <p className="mt-2 text-sm text-red-600">{getErrorMessage(boardQuery.error)}</p>
+          <p className="mt-2 text-sm text-error">{getErrorMessage(boardQuery.error)}</p>
         ) : null}
         {boardQuery.isSuccess ? (
           <>
-            <h1 className="mt-1 text-xl font-bold text-slate-900">{boardQuery.data.title}</h1>
+            <h1 className="mt-1 text-xl font-bold text-ink">{boardQuery.data.title}</h1>
             {boardQuery.data.description ? (
-              <p className="mt-1 text-sm text-slate-500">{boardQuery.data.description}</p>
+              <p className="mt-1 text-sm text-ink-muted">{boardQuery.data.description}</p>
             ) : null}
           </>
         ) : null}
 
         <div className="relative mt-3 max-w-sm">
           <Search
-            className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-ink-disabled"
             aria-hidden="true"
           />
           <input
@@ -191,14 +189,14 @@ export function BoardDetailPage() {
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search tasks… (press / to focus)"
             aria-label="Search tasks"
-            className="w-full rounded-md border border-slate-300 py-1.5 pr-8 pl-8 text-sm placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            className="w-full rounded-md border border-input-border py-1.5 pr-8 pl-8 text-sm placeholder:text-ink-disabled focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-input-focus"
           />
           {searchQuery ? (
             <button
               type="button"
               aria-label="Clear search"
               onClick={() => setSearchQuery("")}
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-ink-disabled hover:bg-surface hover:text-ink-muted"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -207,13 +205,13 @@ export function BoardDetailPage() {
       </header>
 
       {hasUnsavedOrderChanges ? (
-        <div className="border-b border-amber-200 bg-amber-50 px-6 py-2 text-xs text-amber-800">
+        <div className="border-b border-warning/30 bg-warning/10 px-6 py-2 text-xs text-ink">
           Card and column order isn&apos;t saved yet — the backend doesn&apos;t support persisting
           order, so refreshing this page resets it to the original order.
         </div>
       ) : null}
 
-      <main className="flex-1 overflow-x-auto px-6 py-6">
+      <main className="flex-1 overflow-x-auto bg-surface px-6 py-6">
         {columnsQuery.isPending ? <ColumnsSkeleton /> : null}
         {columnsQuery.isError ? (
           <ErrorState
@@ -233,7 +231,7 @@ export function BoardDetailPage() {
         {columnsQuery.isSuccess && columnsQuery.data.length > 0 ? (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={boardCollisionDetection}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
@@ -243,14 +241,13 @@ export function BoardDetailPage() {
               strategy={horizontalListSortingStrategy}
             >
               <div className="flex items-start gap-4">
-                {orderedColumns.map((column, index) => {
+                {orderedColumns.map((column) => {
                   const columnTasksState = tasksQuery.stateByColumnId[column.columnId];
                   return (
                     <KanbanColumn
                       key={column.columnId}
                       column={column}
                       boardId={boardId}
-                      accentIndex={index}
                       tasks={orderedTasksByColumnId[column.columnId] ?? []}
                       isTasksPending={columnTasksState?.isPending ?? true}
                       isTasksError={columnTasksState?.isError ?? false}
@@ -273,18 +270,11 @@ export function BoardDetailPage() {
 
             <DragOverlay>
               {activeDrag?.type === "task" ? <TaskCardPreview task={activeDrag.task} /> : null}
-              {activeDrag?.type === "column"
-                ? (() => {
-                    const accent = getColumnAccent(activeDrag.accentIndex);
-                    return (
-                      <div className={`w-72 rounded-xl px-3 py-2.5 shadow-lg ${accent.header}`}>
-                        <span className={`text-sm font-semibold ${accent.headerText}`}>
-                          {activeDrag.column.title}
-                        </span>
-                      </div>
-                    );
-                  })()
-                : null}
+              {activeDrag?.type === "column" ? (
+                <div className="w-72 rounded-xl border border-border bg-white px-3 py-2.5 shadow-lg">
+                  <span className="text-sm font-semibold text-ink">{activeDrag.column.title}</span>
+                </div>
+              ) : null}
             </DragOverlay>
           </DndContext>
         ) : null}

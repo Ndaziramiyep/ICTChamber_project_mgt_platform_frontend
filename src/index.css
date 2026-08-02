@@ -1,20 +1,30 @@
 @import "tailwindcss";
 
-/* Class-based dark mode (`.dark` on <html>) instead of the `prefers-color-scheme`-only default,
-   so a manual toggle can override the system preference. See `use-theme.ts`. */
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme {
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
+  --color-surface: #f8f9fa;
+  --color-sidebar: #212529;
+
+  --color-primary: #ffc107;
+  --color-primary-hover: #ffb300;
+  --color-primary-active: #ffa000;
+
+  --color-secondary: #212529;
+  --color-secondary-hover: #343a40;
+
+  --color-success: #22c55e;
+  --color-warning: #ffc107;
+  --color-error: #dc3545;
+  --color-info: #0ea5e9;
+
+  --color-ink: #212529;
+  --color-ink-muted: #6c757d;
+  --color-ink-disabled: #adb5bd;
+
+  --color-border: #e5e7eb;
+  --color-divider: #f1f3f5;
+
+  --color-input-border: #dee2e6;
+  --color-input-focus: #ffc107;
 }
 
 html,
@@ -24,9 +34,9 @@ body,
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-white text-ink antialiased;
 }
 
 *:focus-visible {
-  @apply outline-2 outline-offset-2 outline-brand-600;
+  @apply outline-2 outline-offset-2 outline-primary;
 }

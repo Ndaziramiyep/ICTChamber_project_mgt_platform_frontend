@@ -13,7 +13,6 @@ import { Button } from "@/presentation/components/button";
 import { ConfirmDialog } from "@/presentation/components/confirm-dialog";
 import { ErrorState } from "@/presentation/components/page-status";
 import { TaskListSkeleton } from "@/presentation/components/skeleton";
-import { getColumnAccent } from "@/presentation/features/board-detail/column-accent";
 import { ColumnFormModal } from "@/presentation/features/board-detail/column-form-modal";
 import {
   TASK_SORT_OPTIONS,
@@ -30,8 +29,6 @@ import { notify } from "@/shared/lib/notify";
 export interface KanbanColumnProps {
   column: KanbanColumnEntity;
   boardId: string;
-  /** Position among the board's columns, used to pick a distinct header color. */
-  accentIndex: number;
   tasks: Task[];
   isTasksPending: boolean;
   isTasksError: boolean;
@@ -43,7 +40,6 @@ export interface KanbanColumnProps {
 export function KanbanColumn({
   column,
   boardId,
-  accentIndex,
   tasks,
   isTasksPending,
   isTasksError,
@@ -51,7 +47,6 @@ export function KanbanColumn({
   onRetryTasks,
   searchQuery,
 }: KanbanColumnProps) {
-  const accent = getColumnAccent(accentIndex);
   const deleteColumnMutation = useDeleteColumnMutation();
   const deleteTaskMutation = useDeleteTaskMutation();
   const createTaskMutation = useCreateTaskMutation(column.columnId);
@@ -125,19 +120,16 @@ export function KanbanColumn({
       ref={setColumnNodeRef}
       style={columnStyle}
       className={cx(
-        "flex w-72 shrink-0 flex-col overflow-hidden rounded-xl bg-slate-100 shadow-sm",
+        "group flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm",
         isColumnDragging && "opacity-40",
       )}
     >
-      <div className={cx("flex items-center justify-between gap-2 px-3 py-2.5", accent.header)}>
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-white px-3 py-2.5">
         <div className="flex min-w-0 items-center gap-1">
           <button
             type="button"
             aria-label={`Drag ${column.title}`}
-            className={cx(
-              "shrink-0 touch-none rounded p-1 opacity-60 hover:bg-black/10",
-              accent.headerText,
-            )}
+            className="shrink-0 touch-none rounded p-1 text-ink-disabled opacity-0 hover:bg-surface hover:text-ink-muted focus-visible:opacity-100 group-hover:opacity-100"
             {...columnDragAttributes}
             {...columnDragListeners}
           >
@@ -147,10 +139,7 @@ export function KanbanColumn({
             type="button"
             aria-label={isCollapsed ? `Expand ${column.title}` : `Collapse ${column.title}`}
             onClick={() => setIsCollapsed((previous) => !previous)}
-            className={cx(
-              "shrink-0 rounded p-1 opacity-70 hover:bg-black/10 hover:opacity-100",
-              accent.headerText,
-            )}
+            className="shrink-0 rounded p-1 text-ink-muted hover:bg-surface"
           >
             {isCollapsed ? (
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -158,22 +147,15 @@ export function KanbanColumn({
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
             )}
           </button>
-          <h3 className={cx("truncate text-sm font-semibold", accent.headerText)}>
-            {column.title}
-          </h3>
-          <span className={cx("shrink-0 text-xs font-medium opacity-70", accent.headerText)}>
-            {tasks.length}
-          </span>
+          <h3 className="truncate text-sm font-semibold text-ink">{column.title}</h3>
+          <span className="shrink-0 text-xs font-medium text-ink-muted">{tasks.length}</span>
         </div>
-        <div className="flex shrink-0 gap-1">
+        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           <button
             type="button"
             aria-label={`Rename ${column.title}`}
             onClick={() => setIsRenameOpen(true)}
-            className={cx(
-              "rounded p-1 opacity-70 hover:bg-black/10 hover:opacity-100",
-              accent.headerText,
-            )}
+            className="rounded p-1 text-ink-disabled hover:bg-surface hover:text-ink-muted"
           >
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -181,10 +163,7 @@ export function KanbanColumn({
             type="button"
             aria-label={`Delete ${column.title}`}
             onClick={() => setIsDeleteColumnOpen(true)}
-            className={cx(
-              "rounded p-1 opacity-70 hover:bg-black/10 hover:opacity-100",
-              accent.headerText,
-            )}
+            className="rounded p-1 text-ink-disabled hover:bg-error/10 hover:text-error"
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -193,13 +172,13 @@ export function KanbanColumn({
 
       {!isCollapsed ? (
         <div ref={setDropZoneRef} className="flex flex-1 flex-col gap-2 p-3">
-          <label className="flex items-center gap-1.5 text-xs text-slate-500">
+          <label className="flex items-center gap-1.5 text-xs text-ink-muted">
             Sort
             <select
               aria-label={`Sort ${column.title}`}
               value={sortMode}
               onChange={(event) => setSortMode(event.target.value as TaskSortMode)}
-              className="rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700"
+              className="rounded border border-input-border bg-white px-1.5 py-1 text-xs text-ink"
             >
               {TASK_SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -215,7 +194,7 @@ export function KanbanColumn({
           ) : null}
 
           {!isTasksPending && !isTasksError && displayTasks.length === 0 ? (
-            <p className="py-4 text-center text-xs text-slate-400">
+            <p className="py-4 text-center text-xs text-ink-disabled">
               {isSearching ? "No tasks match your search." : "No tasks yet."}
             </p>
           ) : null}

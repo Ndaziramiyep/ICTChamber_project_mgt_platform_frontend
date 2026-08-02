@@ -1,12 +1,7 @@
 import { cx } from "@/shared/lib/class-names";
 
 export function Skeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={cx("animate-pulse rounded bg-slate-200 dark:bg-slate-800", className)}
-      aria-hidden="true"
-    />
-  );
+  return <div className={cx("animate-pulse rounded bg-border", className)} aria-hidden="true" />;
 }
 
 /** Placeholder shown while a board's columns are loading. */
@@ -14,10 +9,7 @@ export function ColumnsSkeleton() {
   return (
     <div className="flex items-start gap-4" role="status" aria-label="Loading columns">
       {[0, 1, 2].map((index) => (
-        <div
-          key={index}
-          className="flex w-72 shrink-0 flex-col gap-3 rounded-xl bg-slate-100 p-3 dark:bg-slate-900"
-        >
+        <div key={index} className="flex w-72 shrink-0 flex-col gap-3 rounded-xl bg-surface p-3">
           <Skeleton className="h-9 w-full rounded-lg" />
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
@@ -46,10 +38,7 @@ export function BoardCardsSkeleton() {
       aria-label="Loading boards"
     >
       {[0, 1, 2].map((index) => (
-        <div
-          key={index}
-          className="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700"
-        >
+        <div key={index} className="flex flex-col gap-3 rounded-lg border border-border p-4">
           <Skeleton className="h-5 w-2/3" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-3 w-1/3" />

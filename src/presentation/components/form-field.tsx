@@ -26,16 +26,16 @@ export function FormField({ label, errorMessage, hint, children }: FormFieldProp
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={fieldId} className="text-sm font-medium text-slate-900 dark:text-slate-100">
+      <label htmlFor={fieldId} className="text-sm font-medium text-ink">
         {label}
       </label>
       {control}
       {errorMessage ? (
-        <p id={descriptionId} role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p id={descriptionId} role="alert" className="text-sm text-error">
           {errorMessage}
         </p>
       ) : hint ? (
-        <p id={descriptionId} className="text-sm text-slate-500 dark:text-slate-400">
+        <p id={descriptionId} className="text-sm text-ink-muted">
           {hint}
         </p>
       ) : null}

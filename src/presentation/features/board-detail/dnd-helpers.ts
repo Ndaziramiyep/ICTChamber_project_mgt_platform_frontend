@@ -1,10 +1,14 @@
+import { closestCenter, type CollisionDetection } from "@dnd-kit/core";
+
 export interface DropTarget {
   columnId: string;
   index: number;
 }
 
+export type DraggableType = "task" | "column-container" | "column";
+
 export interface DraggableData {
-  type?: "task" | "column-container";
+  type?: DraggableType;
   columnId?: string;
 }
 
@@ -44,3 +48,34 @@ export function resolveTaskDropTarget(
 
   return null;
 }
+
+/**
+ * Keeps a dragged item's valid drop targets restricted to its own kind: a dragged column can
+ * only collide with other columns, and a dragged task can only collide with other tasks or a
+ * column's task-container. Without this, a task dragged into a column's empty space can resolve
+ * `over` to that column's own (column-reorder) sortable instead of its task-container — since
+ * the column's outer rect fully encloses the container's, `closestCenter` can pick either one —
+ * which silently no-ops the move. This is what made cross-column dragging feel unreliable with
+ * a mouse: it only worked when dropping exactly on another card.
+ */
+export function filterDroppablesByActiveType<T extends { data: { current?: DraggableData } }>(
+  activeType: DraggableType | undefined,
+  containers: T[],
+): T[] {
+  return containers.filter((container) => {
+    const containerType = container.data.current?.type;
+    if (activeType === "column") {
+      return containerType === "column";
+    }
+    if (activeType === "task") {
+      return containerType === "task" || containerType === "column-container";
+    }
+    return true;
+  });
+}
+
+export const boardCollisionDetection: CollisionDetection = (args) => {
+  const activeType = (args.active.data.current as DraggableData | undefined)?.type;
+  const filteredContainers = filterDroppablesByActiveType(activeType, args.droppableContainers);
+  return closestCenter({ ...args, droppableContainers: filteredContainers });
+};

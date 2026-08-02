@@ -42,7 +42,7 @@ export function TaskCard({
     <Card
       ref={setNodeRef}
       style={style}
-      className={cx("flex flex-col gap-2 p-3", isDragging && "opacity-40")}
+      className={cx("group flex flex-col gap-2 p-3", isDragging && "opacity-40")}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-1.5">
@@ -51,22 +51,22 @@ export function TaskCard({
             aria-label={`Drag ${task.title}`}
             disabled={isDragDisabled}
             className={cx(
-              "mt-0.5 shrink-0 touch-none rounded p-0.5 text-slate-300 hover:bg-slate-100 hover:text-slate-500",
-              isDragDisabled && "cursor-not-allowed opacity-40 hover:bg-transparent",
+              "mt-0.5 shrink-0 touch-none rounded p-0.5 text-ink-disabled opacity-0 hover:bg-surface hover:text-ink-muted focus-visible:opacity-100 group-hover:opacity-100",
+              isDragDisabled && "cursor-not-allowed opacity-0 hover:bg-transparent",
             )}
             {...attributes}
             {...listeners}
           >
             <GripVertical className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
-          <p className="text-sm font-medium wrap-break-word text-slate-900">{task.title}</p>
+          <p className="text-sm font-medium wrap-break-word text-ink">{task.title}</p>
         </div>
-        <div className="flex shrink-0 gap-1">
+        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           <button
             type="button"
             aria-label={`Edit ${task.title}`}
             onClick={onEdit}
-            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded p-1 text-ink-disabled hover:bg-surface hover:text-ink-muted"
           >
             <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -74,7 +74,7 @@ export function TaskCard({
             type="button"
             aria-label={`Duplicate ${task.title}`}
             onClick={onDuplicate}
-            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded p-1 text-ink-disabled hover:bg-surface hover:text-ink-muted"
           >
             <Copy className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -82,14 +82,14 @@ export function TaskCard({
             type="button"
             aria-label={`Delete ${task.title}`}
             onClick={onDelete}
-            className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded p-1 text-ink-disabled hover:bg-error/10 hover:text-error"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>
       {task.description ? (
-        <p className="line-clamp-3 text-xs text-slate-500">{task.description}</p>
+        <p className="line-clamp-3 text-xs text-ink-muted">{task.description}</p>
       ) : null}
     </Card>
   );
@@ -99,9 +99,9 @@ export function TaskCard({
 export function TaskCardPreview({ task }: { task: Task }) {
   return (
     <Card className="flex flex-col gap-2 p-3 shadow-lg">
-      <p className="text-sm font-medium wrap-break-word text-slate-900">{task.title}</p>
+      <p className="text-sm font-medium wrap-break-word text-ink">{task.title}</p>
       {task.description ? (
-        <p className="line-clamp-3 text-xs text-slate-500">{task.description}</p>
+        <p className="line-clamp-3 text-xs text-ink-muted">{task.description}</p>
       ) : null}
     </Card>
   );
